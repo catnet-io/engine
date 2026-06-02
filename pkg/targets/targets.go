@@ -1,4 +1,11 @@
-﻿package targets
+package targets
+
+import (
+	"encoding/binary"
+	"fmt"
+	"net"
+	"strings"
+)
 
 // TargetSet holds the parsed boundaries of a scan.
 type TargetSet struct {
@@ -7,12 +14,6 @@ type TargetSet struct {
 	IPs       []string
 	Hostnames []string
 }
-import (
-	"encoding/binary"
-	"fmt"
-	"net"
-	"strings"
-)
 
 // ParseRange parses a CIDR (e.g. 192.168.1.0/24) or a dash range (192.168.1.1-192.168.1.254)
 // and returns a slice of all IP strings in that range.
