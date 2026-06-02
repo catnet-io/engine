@@ -1,6 +1,6 @@
-package events
+﻿package events
 
-import "catnet-core/pkg/results"
+import "github.com/mendsec/catnet-core/pkg/results"
 
 // EventType categorizes the lifecycle event of a scan.
 type EventType string

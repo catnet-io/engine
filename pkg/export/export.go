@@ -1,9 +1,9 @@
-package export
+﻿package export
 
 import (
 	"bytes"
-	"catnet-core/pkg/errors"
-	"catnet-core/pkg/results"
+	"github.com/mendsec/catnet-core/pkg/errors"
+	"github.com/mendsec/catnet-core/pkg/results"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"

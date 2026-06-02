@@ -1,4 +1,4 @@
-package profile
+﻿package profile
 
 // ScanProfile defines the parameters for a network scan execution.
 type ScanProfile struct {

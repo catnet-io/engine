@@ -1,10 +1,10 @@
-package scan
+﻿package scan
 
 import (
-	"catnet-core/pkg/errors"
-	"catnet-core/pkg/events"
-	"catnet-core/pkg/profile"
-	"catnet-core/pkg/results"
+	"github.com/mendsec/catnet-core/pkg/errors"
+	"github.com/mendsec/catnet-core/pkg/events"
+	"github.com/mendsec/catnet-core/pkg/profile"
+	"github.com/mendsec/catnet-core/pkg/results"
 	"context"
 	"sync"
 	"sync/atomic"

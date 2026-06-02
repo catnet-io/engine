@@ -1,4 +1,4 @@
-//go:build !windows
+﻿//go:build !windows
 
 package scan
 
@@ -20,7 +20,7 @@ func osGetMAC(ip string) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	// Parses arp output looking for MAC
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines {

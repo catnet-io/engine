@@ -1,4 +1,4 @@
-package targets
+﻿package targets
 
 // TargetSet holds the parsed boundaries of a scan.
 type TargetSet struct {

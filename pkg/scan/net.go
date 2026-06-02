@@ -1,4 +1,4 @@
-package scan
+﻿package scan
 
 import (
 	"fmt"
@@ -8,19 +8,19 @@ import (
 	"time"
 )
 
-// validateIPv4 retorna erro se ip não for um endereço IPv4 válido.
+// validateIPv4 retorna erro se ip nÃ£o for um endereÃ§o IPv4 vÃ¡lido.
 func validateIPv4(ip string) error {
 	parsed := net.ParseIP(ip)
 	if parsed == nil {
-		return fmt.Errorf("endereço IP inválido: %q", ip)
+		return fmt.Errorf("endereÃ§o IP invÃ¡lido: %q", ip)
 	}
 	if parsed.To4() == nil {
-		return fmt.Errorf("apenas IPv4 é suportado: %q", ip)
+		return fmt.Errorf("apenas IPv4 Ã© suportado: %q", ip)
 	}
 	return nil
 }
 
-// Ping verifica se um host está vivo.
+// Ping verifica se um host estÃ¡ vivo.
 func Ping(ip string, timeoutMs int) bool {
 	if err := validateIPv4(ip); err != nil {
 		return false
@@ -40,7 +40,7 @@ func ReverseDNS(ip string) string {
 	return ""
 }
 
-// GetMAC obtém o MAC Address de um IP na LAN.
+// GetMAC obtÃ©m o MAC Address de um IP na LAN.
 func GetMAC(ip string) string {
 	if err := validateIPv4(ip); err != nil {
 		return ""
@@ -48,7 +48,7 @@ func GetMAC(ip string) string {
 	return osGetMAC(ip)
 }
 
-// ScanPorts verifica quais das portas especificadas estão abertas.
+// ScanPorts verifica quais das portas especificadas estÃ£o abertas.
 func ScanPorts(ip string, ports []int, timeoutMs int) []int {
 	if err := validateIPv4(ip); err != nil {
 		return nil

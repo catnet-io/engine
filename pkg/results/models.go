@@ -1,4 +1,4 @@
-package results
+﻿package results
 
 // HostResult represents the outcome of scanning a single host.
 type HostResult struct {
