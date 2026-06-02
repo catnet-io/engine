@@ -1,0 +1,87 @@
+package exporter
+
+import (
+	"bytes"
+	"encoding/csv"
+	"encoding/json"
+	"encoding/xml"
+	"fmt"
+	"github.com/mendsec/catnet-core/pkg/scanner"
+	"strconv"
+	"strings"
+)
+
+// ExportJSON exporta resultados para formato JSON.
+func ExportJSON(devices []scanner.DeviceInfo) ([]byte, error) {
+	out, err := json.MarshalIndent(devices, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode JSON: %w", err)
+	}
+	return out, nil
+}
+
+// ExportXML exporta resultados para formato XML.
+func ExportXML(devices []scanner.DeviceInfo) ([]byte, error) {
+	type XMLDevice struct {
+		IP       string `xml:"ip"`
+		Hostname string `xml:"hostname"`
+		MAC      string `xml:"mac"`
+		Status   string `xml:"status"`
+	}
+	type XMLResults struct {
+		XMLName xml.Name    `xml:"results"`
+		Devices []XMLDevice `xml:"device"`
+	}
+	res := XMLResults{}
+	for _, d := range devices {
+		status := "Dead"
+		if d.IsAlive {
+			status = "Alive"
+		}
+		res.Devices = append(res.Devices, XMLDevice{
+			IP: d.IP, Hostname: d.Hostname, MAC: d.MAC, Status: status,
+		})
+	}
+	out, err := xml.MarshalIndent(res, "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode XML: %w", err)
+	}
+	return append([]byte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"), out...), nil
+}
+
+// sanitizeCSVField limpa caracteres perigosos para prevenção de injeção CSV.
+func sanitizeCSVField(field string) string {
+	if len(field) > 0 {
+		fc := field[0]
+		if fc == '=' || fc == '+' || fc == '-' || fc == '@' || fc == '\t' || fc == '\r' {
+			return "'" + field
+		}
+	}
+	return field
+}
+
+// ExportCSV exporta resultados para formato CSV.
+func ExportCSV(devices []scanner.DeviceInfo) ([]byte, error) {
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "Open Ports"}); err != nil {
+		return nil, err
+	}
+	for _, d := range devices {
+		status := "Dead"
+		if d.IsAlive {
+			status = "Alive"
+		}
+		var strPorts []string
+		for _, p := range d.OpenPorts {
+			strPorts = append(strPorts, strconv.Itoa(p))
+		}
+		if err := writer.Write([]string{
+			d.IP, sanitizeCSVField(d.Hostname), d.MAC, status, strings.Join(strPorts, ";"),
+		}); err != nil {
+			return nil, err
+		}
+	}
+	writer.Flush()
+	return buf.Bytes(), nil
+}
