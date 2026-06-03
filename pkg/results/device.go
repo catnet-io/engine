@@ -1,4 +1,4 @@
-package scanner
+package results
 
 // DeviceInfo representa o resultado da varredura de um único host.
 type DeviceInfo struct {

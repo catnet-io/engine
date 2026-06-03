@@ -1,13 +1,13 @@
 package exporter
 
 import (
-	"github.com/mendsec/catnet-core/pkg/scanner"
+	"github.com/mendsec/catnet-core/pkg/results"
 	"strings"
 	"testing"
 )
 
 func TestExportCSV(t *testing.T) {
-	devices := []scanner.DeviceInfo{
+	devices := []results.DeviceInfo{
 		{IP: "192.168.1.10", Hostname: "=cmd|' /C calc'!A0", MAC: "AA:BB", IsAlive: true, OpenPorts: []int{80}},
 		{IP: "192.168.1.11", Hostname: "NormalHost", MAC: "CC:DD", IsAlive: false, OpenPorts: nil},
 	}
@@ -27,7 +27,7 @@ func TestExportCSV(t *testing.T) {
 }
 
 func TestExportXML(t *testing.T) {
-	devices := []scanner.DeviceInfo{
+	devices := []results.DeviceInfo{
 		{IP: "192.168.1.10", Hostname: "HostA", MAC: "AA:BB", IsAlive: true},
 	}
 
@@ -46,7 +46,7 @@ func TestExportXML(t *testing.T) {
 }
 
 func TestExportJSON(t *testing.T) {
-	devices := []scanner.DeviceInfo{
+	devices := []results.DeviceInfo{
 		{IP: "192.168.1.10", Hostname: "HostA", MAC: "AA:BB", IsAlive: true},
 	}
 
