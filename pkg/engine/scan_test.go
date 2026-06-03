@@ -1,8 +1,11 @@
-package scanner
+package engine
 
 import (
+	"context"
 	"sync"
 	"testing"
+
+	"github.com/mendsec/catnet-core/pkg/results"
 )
 
 func TestScanConcurrency(t *testing.T) {
@@ -12,25 +15,25 @@ func TestScanConcurrency(t *testing.T) {
 	cfg.MaxThreads = 2
 
 	var mu sync.Mutex
-	var results []DeviceInfo
+	var res []results.DeviceInfo
 
-	err := StartScan(ips, cfg, func(d DeviceInfo) {
+	err := StartScan(context.Background(), ips, cfg, func(d results.DeviceInfo) {
 		mu.Lock()
 		defer mu.Unlock()
-		results = append(results, d)
+		res = append(res, d)
 	}, nil)
 
 	if err != nil {
 		t.Fatalf("StartScan failed: %v", err)
 	}
 
-	if len(results) != len(ips) {
-		t.Errorf("Expected %d results, got %d", len(ips), len(results))
+	if len(res) != len(ips) {
+		t.Errorf("Expected %d results, got %d", len(ips), len(res))
 	}
 
 	// Verify all ips are present
 	ipMap := make(map[string]bool)
-	for _, r := range results {
+	for _, r := range res {
 		ipMap[r.IP] = true
 	}
 	for _, ip := range ips {
