@@ -12,8 +12,8 @@ import (
 )
 
 // ExportJSON exporta resultados para formato JSON.
-func ExportJSON(devices []results.DeviceInfo) ([]byte, error) {
-	out, err := json.MarshalIndent(devices, "", "  ")
+func ExportJSON(report *results.ScanReport) ([]byte, error) {
+	out, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode JSON: %w", err)
 	}
@@ -21,7 +21,7 @@ func ExportJSON(devices []results.DeviceInfo) ([]byte, error) {
 }
 
 // ExportXML exporta resultados para formato XML.
-func ExportXML(devices []results.DeviceInfo) ([]byte, error) {
+func ExportXML(report *results.ScanReport) ([]byte, error) {
 	type XMLDevice struct {
 		IP       string `xml:"ip"`
 		Hostname string `xml:"hostname"`
@@ -33,7 +33,7 @@ func ExportXML(devices []results.DeviceInfo) ([]byte, error) {
 		Devices []XMLDevice `xml:"device"`
 	}
 	res := XMLResults{}
-	for _, d := range devices {
+	for _, d := range report.Devices {
 		status := "Dead"
 		if d.IsAlive {
 			status = "Alive"
@@ -61,13 +61,13 @@ func sanitizeCSVField(field string) string {
 }
 
 // ExportCSV exporta resultados para formato CSV.
-func ExportCSV(devices []results.DeviceInfo) ([]byte, error) {
+func ExportCSV(report *results.ScanReport) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "Open Ports"}); err != nil {
 		return nil, err
 	}
-	for _, d := range devices {
+	for _, d := range report.Devices {
 		status := "Dead"
 		if d.IsAlive {
 			status = "Alive"
@@ -77,7 +77,7 @@ func ExportCSV(devices []results.DeviceInfo) ([]byte, error) {
 			strPorts = append(strPorts, strconv.Itoa(p))
 		}
 		if err := writer.Write([]string{
-			d.IP, sanitizeCSVField(d.Hostname), d.MAC, status, strings.Join(strPorts, ";"),
+			sanitizeCSVField(d.IP), sanitizeCSVField(d.Hostname), sanitizeCSVField(d.MAC), status, strings.Join(strPorts, ";"),
 		}); err != nil {
 			return nil, err
 		}

@@ -4,17 +4,44 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/mendsec/catnet-core/pkg/discovery"
 	"github.com/mendsec/catnet-core/pkg/ports"
 	"github.com/mendsec/catnet-core/pkg/results"
 )
 
-// StartScan inicia uma varredura de rede concorrente.
-func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onResult func(results.DeviceInfo), onProgress func(float64)) error {
+// StartScan inicia uma varredura de rede concorrente e retorna um relatório completo.
+func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventCallback) (*results.ScanReport, error) {
+	report := results.NewScanReport()
 	total := len(ips)
+	report.Total = total
 	if total == 0 {
-		return nil
+		report.EndTime = time.Now()
+		return report, nil
+	}
+
+	threads := cfg.MaxThreads
+	if threads <= 0 {
+		threads = 16
+	}
+	const maxAllowedThreads = 256
+	if threads > maxAllowedThreads {
+		threads = maxAllowedThreads
+	}
+	if _, ok := ctx.Deadline(); !ok {
+		// Calcula timeout defensivo:
+		// Se cada ping/port timeout levar o tempo máximo, 
+		// com threads em paralelo. Apenas um fallback.
+		maxDuration := time.Duration(total) * (time.Duration(cfg.PingTimeoutMs) * time.Millisecond) / time.Duration(threads)
+		maxDuration += time.Minute // Buffer de segurança
+		// Limite fixo absoluto de 2 horas
+		if maxDuration > 2*time.Hour {
+			maxDuration = 2 * time.Hour
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, maxDuration)
+		defer cancel()
 	}
 
 	ipChan := make(chan string, total)
@@ -24,16 +51,11 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onResult func(
 	close(ipChan)
 
 	var wg sync.WaitGroup
-	threads := cfg.MaxThreads
-	if threads <= 0 {
-		threads = 16
-	}
-	const maxAllowedThreads = 256
-	if threads > maxAllowedThreads {
-		threads = maxAllowedThreads
-	}
+
 
 	var processed int32
+	var mu sync.Mutex
+
 	for i := 0; i < threads; i++ {
 		wg.Add(1)
 		go func() {
@@ -51,17 +73,32 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onResult func(
 						di.OpenPorts = ports.ScanPorts(ip, cfg.DefaultPorts, cfg.PortTimeoutMs)
 						di.OpenPortsCount = len(di.OpenPorts)
 					}
-					if onResult != nil {
-						onResult(di)
+
+					mu.Lock()
+					report.Devices = append(report.Devices, di)
+					if di.IsAlive {
+						report.Alive++
 					}
+					mu.Unlock()
+
 					curr := atomic.AddInt32(&processed, 1)
-					if onProgress != nil {
-						onProgress(float64(curr) / float64(total))
+					if onEvent != nil {
+						onEvent(ScanEvent{
+							Type:     EventResult,
+							Device:   &di,
+							Progress: float64(curr) / float64(total),
+						})
+						onEvent(ScanEvent{
+							Type:     EventProgress,
+							Device:   nil,
+							Progress: float64(curr) / float64(total),
+						})
 					}
 				}
 			}
 		}()
 	}
 	wg.Wait()
-	return nil
+	report.EndTime = time.Now()
+	return report, nil
 }
