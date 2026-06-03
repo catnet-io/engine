@@ -1,25 +1,15 @@
 package discovery
 
 import (
-	"fmt"
 	"net"
 	"strings"
-)
 
-func validateIPv4(ip string) error {
-	parsed := net.ParseIP(ip)
-	if parsed == nil {
-		return fmt.Errorf("endereço IP inválido: %q", ip)
-	}
-	if parsed.To4() == nil {
-		return fmt.Errorf("apenas IPv4 é suportado: %q", ip)
-	}
-	return nil
-}
+	"github.com/mendsec/catnet-core/internal/netutil"
+)
 
 // Ping realiza um ping ICMP na máquina com timeout em milissegundos.
 func Ping(ip string, timeoutMs int) bool {
-	if err := validateIPv4(ip); err != nil {
+	if err := netutil.ValidateIPv4(ip); err != nil {
 		return false
 	}
 	return osPing(ip, timeoutMs)
@@ -27,7 +17,7 @@ func Ping(ip string, timeoutMs int) bool {
 
 // ReverseDNS resolve o nome do host do endereço IP dado.
 func ReverseDNS(ip string) string {
-	if err := validateIPv4(ip); err != nil {
+	if err := netutil.ValidateIPv4(ip); err != nil {
 		return ""
 	}
 	names, err := net.LookupAddr(ip)
@@ -39,7 +29,7 @@ func ReverseDNS(ip string) string {
 
 // GetMAC tenta obter o endereço MAC da máquina alvo.
 func GetMAC(ip string) string {
-	if err := validateIPv4(ip); err != nil {
+	if err := netutil.ValidateIPv4(ip); err != nil {
 		return ""
 	}
 	return osGetMAC(ip)

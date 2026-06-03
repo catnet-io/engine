@@ -68,7 +68,14 @@ func StartScan(ips []string, cfg ScanConfig, onResult func(DeviceInfo), onProgre
 		cancel()
 	}()
 
-	return engine.StartScan(ctx, ips, cfg, onResult, onProgress)
+	_, err := engine.StartScan(ctx, ips, cfg, func(event engine.ScanEvent) {
+		if event.Type == engine.EventResult && event.Device != nil && onResult != nil {
+			onResult(*event.Device)
+		} else if event.Type == engine.EventProgress && onProgress != nil {
+			onProgress(event.Progress)
+		}
+	})
+	return err
 }
 
 // StopScan is deprecated: Caller should pass a cancelable context to engine.StartScan instead.
