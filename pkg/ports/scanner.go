@@ -9,7 +9,6 @@ import (
 
 	"github.com/mendsec/catnet-core/internal/netutil"
 )
-
 // ScanPorts varre uma lista de portas em um IP e retorna as abertas.
 // ⚡ Bolt Optimization: Concurrently scan ports to prevent cumulative timeouts from blocking the scan.
 func ScanPorts(ip string, ports []int, timeoutMs int) []int {
