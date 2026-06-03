@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/mendsec/catnet-core/pkg/scanner"
+	"github.com/mendsec/catnet-core/pkg/results"
 	"strconv"
 	"strings"
 )
 
 // ExportJSON exporta resultados para formato JSON.
-func ExportJSON(devices []scanner.DeviceInfo) ([]byte, error) {
+func ExportJSON(devices []results.DeviceInfo) ([]byte, error) {
 	out, err := json.MarshalIndent(devices, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode JSON: %w", err)
@@ -21,7 +21,7 @@ func ExportJSON(devices []scanner.DeviceInfo) ([]byte, error) {
 }
 
 // ExportXML exporta resultados para formato XML.
-func ExportXML(devices []scanner.DeviceInfo) ([]byte, error) {
+func ExportXML(devices []results.DeviceInfo) ([]byte, error) {
 	type XMLDevice struct {
 		IP       string `xml:"ip"`
 		Hostname string `xml:"hostname"`
@@ -61,7 +61,7 @@ func sanitizeCSVField(field string) string {
 }
 
 // ExportCSV exporta resultados para formato CSV.
-func ExportCSV(devices []scanner.DeviceInfo) ([]byte, error) {
+func ExportCSV(devices []results.DeviceInfo) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "Open Ports"}); err != nil {

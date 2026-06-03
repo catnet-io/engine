@@ -1,4 +1,4 @@
-package scanner
+package engine
 
 // ScanConfig define os parâmetros de uma varredura.
 type ScanConfig struct {
