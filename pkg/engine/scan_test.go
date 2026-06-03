@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/mendsec/catnet-core/pkg/results"
@@ -13,11 +14,14 @@ func TestScanConcurrency(t *testing.T) {
 	cfg.PingTimeoutMs = 10 // small timeout for test
 	cfg.MaxThreads = 2
 
+	var mu sync.Mutex
 	var eventDevices []results.DeviceInfo
 
 	report, err := StartScan(context.Background(), ips, cfg, func(event ScanEvent) {
 		if event.Type == EventResult && event.Device != nil {
+			mu.Lock()
 			eventDevices = append(eventDevices, *event.Device)
+			mu.Unlock()
 		}
 	})
 
