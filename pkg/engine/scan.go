@@ -16,6 +16,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	report := results.NewScanReport()
 	total := len(ips)
 	report.Total = total
+	report.Devices = make([]results.DeviceInfo, 0, total)
 	if total == 0 {
 		report.EndTime = time.Now()
 		return report, nil
@@ -31,9 +32,13 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	}
 	if _, ok := ctx.Deadline(); !ok {
 		// Calcula timeout defensivo:
-		// Se cada ping/port timeout levar o tempo máximo, 
+		// Se cada ping/port timeout levar o tempo máximo sequencialmente, 
 		// com threads em paralelo. Apenas um fallback.
-		maxDuration := time.Duration(total) * (time.Duration(cfg.PingTimeoutMs) * time.Millisecond) / time.Duration(threads)
+		maxTimePerHost := time.Duration(cfg.PingTimeoutMs) * time.Millisecond
+		if len(cfg.DefaultPorts) > 0 {
+			maxTimePerHost += time.Duration(len(cfg.DefaultPorts)) * time.Duration(cfg.PortTimeoutMs) * time.Millisecond
+		}
+		maxDuration := time.Duration(total) * maxTimePerHost / time.Duration(threads)
 		maxDuration += time.Minute // Buffer de segurança
 		// Limite fixo absoluto de 2 horas
 		if maxDuration > 2*time.Hour {
