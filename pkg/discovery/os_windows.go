@@ -12,6 +12,9 @@ import (
 
 // osPing faz ping no Windows
 func osPing(ip string, timeoutMs int) bool {
+	if net.ParseIP(ip) == nil {
+		return false
+	}
 	cmd := exec.Command("ping", "-n", "1", "-w", fmt.Sprintf("%d", timeoutMs), ip)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	return cmd.Run() == nil
