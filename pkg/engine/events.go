@@ -6,7 +6,11 @@ import "github.com/mendsec/catnet-core/pkg/results"
 type ScanEventType int
 
 const (
-	EventResult ScanEventType = iota
+	EventLifecycleStart ScanEventType = iota
+	EventLifecycleComplete
+	EventLifecycleCancel
+	EventWarning
+	EventResult
 	EventProgress
 )
 
@@ -15,6 +19,7 @@ type ScanEvent struct {
 	Type     ScanEventType
 	Device   *results.DeviceInfo
 	Progress float64
+	Message  string
 }
 
 // EventCallback é a assinatura da função de callback síncrono.
