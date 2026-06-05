@@ -13,6 +13,8 @@ func TestParseRange(t *testing.T) {
 	}{
 		{"Single IP valid", "10.0.0.1", 1, false},
 		{"CIDR valid", "192.168.1.0/30", 2, false}, // 192.168.1.1 and 192.168.1.2
+		{"CIDR too large", "0.0.0.0/0", 0, true},
+		{"CIDR max limit", "10.0.0.0/16", 65534, false},
 		{"Dash range full valid", "192.168.1.10-192.168.1.12", 3, false},
 		{"Dash range shorthand valid", "192.168.1.10-12", 3, false},
 		{"Invalid format", "invalid", 0, true},
