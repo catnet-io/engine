@@ -19,7 +19,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	total := len(ips)
 	report.Total = total
 	report.Devices = make([]results.DeviceInfo, 0, total)
-	
+
 	if onEvent != nil {
 		onEvent(ScanEvent{
 			Type:    EventLifecycleStart,
@@ -120,7 +120,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	}
 	wg.Wait()
 	report.EndTime = time.Now()
-	
+
 	if ctx.Err() == context.DeadlineExceeded {
 		if onEvent != nil {
 			onEvent(ScanEvent{Type: EventLifecycleCancel, Message: "Scan timeout"})

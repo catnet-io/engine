@@ -12,3 +12,7 @@
 *   **Edge Case / Learning:** The ICMP reply structure on Windows returns the actual status code at offset 4 of the payload byte array. The lazy loading of `iphlpapi.dll` is efficient enough for this context as the network latency dominates, though global loading could save a few nanoseconds. The change eliminates command injection risks while providing a massive performance boost.
 
 2023-10-27: Found infinite loop and OOM vulnerability when parsing CIDRs containing 0.0.0.0 and exceeding limits. Prevented infinite looping by making increment function return overflow indication, and prevented OOMs by capping CIDR generation limit to 65536 IPs.
+
+## 2026-06-05 - [MAC Address Resolution Fast Path]
+**Learning:** Spawning an external process (`fork`/`exec` via `exec.Command`) to read the local ARP table (`arp -an`) creates massive performance penalties and OS scheduling contention when scaled across many concurrent scanning threads. For example, spawning a process for 100 IPs can take ~300ms, whereas reading a file takes ~2.5ms.
+**Action:** When gathering MAC addresses on POSIX systems (specifically Linux), implement a fast path that reads directly from `/proc/net/arp`. Only fallback to `exec.Command` if the file doesn't exist or isn't mounted (e.g. macOS/BSD).

@@ -7,9 +7,9 @@ type ScanReport struct {
 	SchemaVersion string       `json:"schemaVersion"`
 	StartTime     time.Time    `json:"startTime"`
 	EndTime       time.Time    `json:"endTime"`
-	Total     int          `json:"total"`
-	Alive     int          `json:"alive"`
-	Devices   []DeviceInfo `json:"devices"`
+	Total         int          `json:"total"`
+	Alive         int          `json:"alive"`
+	Devices       []DeviceInfo `json:"devices"`
 }
 
 // NewScanReport cria um novo relatório de varredura.
