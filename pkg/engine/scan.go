@@ -15,6 +15,9 @@ import (
 
 // StartScan inicia uma varredura de rede concorrente e retorna um relatório completo.
 func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventCallback) (*results.ScanReport, error) {
+	// Defensively enforce safe limits regardless of consumer input
+	cfg.Sanitize()
+
 	report := results.NewScanReport()
 	total := len(ips)
 	report.Total = total
