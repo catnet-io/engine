@@ -5,16 +5,50 @@ package discovery
 import (
 	"fmt"
 	"net"
-	"os/exec"
 	"syscall"
 	"unsafe"
 )
 
 // osPing faz ping no Windows
 func osPing(ip string, timeoutMs int) bool {
-	cmd := exec.Command("ping", "-n", "1", "-w", fmt.Sprintf("%d", timeoutMs), ip)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	return cmd.Run() == nil
+	iphlpapi := syscall.NewLazyDLL("iphlpapi.dll")
+	icmpCreateFile := iphlpapi.NewProc("IcmpCreateFile")
+	icmpSendEcho := iphlpapi.NewProc("IcmpSendEcho")
+	icmpCloseHandle := iphlpapi.NewProc("IcmpCloseHandle")
+
+	handle, _, _ := icmpCreateFile.Call()
+	if handle == ^uintptr(0) {
+		return false
+	}
+	defer icmpCloseHandle.Call(handle)
+
+	destIP := net.ParseIP(ip).To4()
+	if destIP == nil {
+		return false
+	}
+
+	var destIPUint32 uint32 = uint32(destIP[0]) | uint32(destIP[1])<<8 | uint32(destIP[2])<<16 | uint32(destIP[3])<<24
+
+	var replyData [128]byte
+	replySize := uint32(len(replyData))
+
+	ret, _, _ := icmpSendEcho.Call(
+		handle,
+		uintptr(destIPUint32),
+		0,
+		0,
+		0,
+		uintptr(unsafe.Pointer(&replyData[0])),
+		uintptr(replySize),
+		uintptr(timeoutMs),
+	)
+
+	if ret == 0 {
+		return false
+	}
+
+	status := *(*uint32)(unsafe.Pointer(&replyData[4]))
+	return status == 0
 }
 
 // osGetMAC obtém o MAC usando SendARP no Windows
