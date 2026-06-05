@@ -1,9 +1,11 @@
 package exporter
 
 import (
-	"github.com/mendsec/catnet-core/pkg/results"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/mendsec/catnet-core/pkg/results"
 )
 
 func TestExportCSV(t *testing.T) {
@@ -70,5 +72,44 @@ func TestExportJSON(t *testing.T) {
 	}
 	if !strings.Contains(strOut, "\"isAlive\": true") {
 		t.Errorf("Expected isAlive in JSON output")
+	}
+}
+
+func getBenchmarkReport() *results.ScanReport {
+	report := results.NewScanReport()
+	for i := 0; i < 1000; i++ {
+		report.Devices = append(report.Devices, results.DeviceInfo{
+			IP:        "192.168.1." + strconv.Itoa(i%255),
+			MAC:       "AA:BB:CC:DD:EE:FF",
+			Hostname:  "host-" + strconv.Itoa(i),
+			IsAlive:   i%2 == 0,
+			OpenPorts: []int{80, 443, 8080},
+		})
+	}
+	report.Total = 1000
+	return report
+}
+
+func BenchmarkExportJSON(b *testing.B) {
+	report := getBenchmarkReport()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = ExportJSON(report)
+	}
+}
+
+func BenchmarkExportCSV(b *testing.B) {
+	report := getBenchmarkReport()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = ExportCSV(report)
+	}
+}
+
+func BenchmarkExportXML(b *testing.B) {
+	report := getBenchmarkReport()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = ExportXML(report)
 	}
 }

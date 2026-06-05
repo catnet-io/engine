@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "startTime": "2026-06-05T12:00:00Z",
+  "endTime": "2026-06-05T12:00:05Z",
+  "total": 3,
+  "alive": 2,
+  "devices": [
+    {
+      "ip": "192.168.1.10",
+      "mac": "AA:BB:CC:DD:EE:01",
+      "hostname": "router.local",
+      "isAlive": true,
+      "openPorts": [80, 443]
+    },
+    {
+      "ip": "192.168.1.11",
+      "mac": "AA:BB:CC:DD:EE:02",
+      "hostname": "server.local",
+      "isAlive": true,
+      "openPorts": [22]
+    },
+    {
+      "ip": "192.168.1.12",
+      "mac": "",
+      "hostname": "",
+      "isAlive": false,
+      "openPorts": []
+    }
+  ]
+}
