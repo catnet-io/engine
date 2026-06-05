@@ -5,6 +5,10 @@ type ScanConfig struct {
 	DefaultPorts  []int `json:"defaultPorts"`
 	PortTimeoutMs int   `json:"portTimeoutMs"`
 	PingTimeoutMs int   `json:"pingTimeoutMs"`
+	
+	// MaxThreads define o nível de paralelismo da varredura.
+	// O motor impõe um limite máximo rigoroso de 256 threads para prevenir exaustão
+	// de sockets no host (ulimit issues) e um mínimo de 1.
 	MaxThreads    int   `json:"maxThreads"`
 }
 
@@ -19,7 +23,8 @@ func DefaultConfig() ScanConfig {
 }
 
 // Sanitize corrige valores fora de limites seguros.
-// Deve ser chamada por callers antes de passar a config para StartScan.
+// O próprio motor executa essa sanitização defensivamente no StartScan,
+// mas pode ser invocada manualmente para refletir os limites na interface do cliente.
 func (c *ScanConfig) Sanitize() {
 	if c.MaxThreads <= 0 || c.MaxThreads > 256 {
 		c.MaxThreads = 16
