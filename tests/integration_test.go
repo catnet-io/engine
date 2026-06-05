@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -58,10 +59,13 @@ func TestEndToEndScanAndExport(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	var mu sync.Mutex
 	var startEventReceived, completeEventReceived bool
 	var resultsReceived int
 
 	report, err := engine.StartScan(ctx, allIPs, cfg, func(event engine.ScanEvent) {
+		mu.Lock()
+		defer mu.Unlock()
 		switch event.Type {
 		case engine.EventLifecycleStart:
 			startEventReceived = true
