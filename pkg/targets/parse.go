@@ -31,9 +31,18 @@ func parseCIDR(cidr string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	ones, bits := ipnet.Mask.Size()
+	if bits-ones > 16 {
+		return nil, fmt.Errorf("range too large (max 65536)")
+	}
+
 	var ips []string
-	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
+	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); {
 		ips = append(ips, ip.String())
+		if inc(ip) {
+			break
+		}
 	}
 	if len(ips) > 2 {
 		return ips[1 : len(ips)-1], nil
@@ -76,11 +85,12 @@ func parseDashRange(dashStr string) ([]string, error) {
 	return ips, nil
 }
 
-func inc(ip net.IP) {
+func inc(ip net.IP) bool {
 	for j := len(ip) - 1; j >= 0; j-- {
 		ip[j]++
 		if ip[j] > 0 {
-			break
+			return false
 		}
 	}
+	return true
 }
