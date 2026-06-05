@@ -15,14 +15,16 @@ func osPing(ip string, timeoutMs int) bool {
 
 // osGetMAC obtém o MAC em sistemas POSIX usando comando arp
 func osGetMAC(ip string) string {
-	cmd := exec.Command("arp", "-n", ip)
+	cmd := exec.Command("arp", "-an")
 	out, err := cmd.Output()
 	if err != nil {
 		return ""
 	}
 	lines := strings.Split(string(out), "\n")
+	searchParen := "(" + ip + ")"
+	searchSpace := " " + ip + " "
 	for _, line := range lines {
-		if strings.Contains(line, ip) {
+		if strings.Contains(line, searchParen) || strings.Contains(line, searchSpace) {
 			parts := strings.Fields(line)
 			for _, p := range parts {
 				if strings.Contains(p, ":") && len(p) == 17 {
