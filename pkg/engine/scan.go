@@ -2,10 +2,12 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/mendsec/catnet-core/pkg/coreerr"
 	"github.com/mendsec/catnet-core/pkg/discovery"
 	"github.com/mendsec/catnet-core/pkg/ports"
 	"github.com/mendsec/catnet-core/pkg/results"
@@ -17,8 +19,22 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	total := len(ips)
 	report.Total = total
 	report.Devices = make([]results.DeviceInfo, 0, total)
+
+	if onEvent != nil {
+		onEvent(ScanEvent{
+			Type:    EventLifecycleStart,
+			Message: "Scan started",
+		})
+	}
+
 	if total == 0 {
 		report.EndTime = time.Now()
+		if onEvent != nil {
+			onEvent(ScanEvent{
+				Type:    EventLifecycleComplete,
+				Message: "Scan completed (empty)",
+			})
+		}
 		return report, nil
 	}
 
@@ -32,7 +48,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	}
 	if _, ok := ctx.Deadline(); !ok {
 		// Calcula timeout defensivo:
-		// Se cada ping/port timeout levar o tempo máximo sequencialmente, 
+		// Se cada ping/port timeout levar o tempo máximo sequencialmente,
 		// com threads em paralelo. Apenas um fallback.
 		maxTimePerHost := time.Duration(cfg.PingTimeoutMs) * time.Millisecond
 		if len(cfg.DefaultPorts) > 0 {
@@ -56,7 +72,6 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	close(ipChan)
 
 	var wg sync.WaitGroup
-
 
 	var processed int32
 	var mu sync.Mutex
@@ -105,5 +120,21 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	}
 	wg.Wait()
 	report.EndTime = time.Now()
+
+	if ctx.Err() == context.DeadlineExceeded {
+		if onEvent != nil {
+			onEvent(ScanEvent{Type: EventLifecycleCancel, Message: "Scan timeout"})
+		}
+		return report, fmt.Errorf("%w: scan reached timeout", coreerr.ErrTimeout)
+	} else if ctx.Err() == context.Canceled {
+		if onEvent != nil {
+			onEvent(ScanEvent{Type: EventLifecycleCancel, Message: "Scan cancelled"})
+		}
+		return report, fmt.Errorf("%w: scan was cancelled", coreerr.ErrCancelled)
+	}
+
+	if onEvent != nil {
+		onEvent(ScanEvent{Type: EventLifecycleComplete, Message: "Scan completed successfully"})
+	}
 	return report, nil
 }

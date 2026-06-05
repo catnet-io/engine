@@ -47,7 +47,7 @@ func TestScanConcurrency(t *testing.T) {
 			t.Errorf("Expected IP %s in report", ip)
 		}
 	}
-	
+
 	if len(eventDevices) != len(ips) {
 		t.Errorf("Expected %d results from events, got %d", len(ips), len(eventDevices))
 	}
