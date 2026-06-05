@@ -34,3 +34,11 @@ func TestParseRange(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkParseRange(b *testing.B) {
+	input := "10.0.0.0/16" // 65534 IPs
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = ParseRange(input)
+	}
+}
