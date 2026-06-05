@@ -33,20 +33,20 @@ func parseCIDR(cidr string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	// ⚡ Bolt Optimization: Pre-allocate slice to prevent dynamic resizing overhead.
 	ones, bits := ipnet.Mask.Size()
 	if bits-ones > 16 {
 		return nil, fmt.Errorf("range too large (max 65536)")
 	}
-
-	var ips []string
+	capacity := 1 << (bits - ones)
+	ips := make([]string, 0, capacity)
 	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); {
 		ips = append(ips, ip.String())
 		if inc(ip) {
 			break
 		}
 	}
-	if len(ips) > 2 {
+	if len(ips) > 2 { // Skip network and broadcast addresses
 		return ips[1 : len(ips)-1], nil
 	}
 	return ips, nil
@@ -78,9 +78,11 @@ func parseDashRange(dashStr string) ([]string, error) {
 	if end-start > 65536 {
 		return nil, fmt.Errorf("%w: range too large (max 65536)", coreerr.ErrInvalidInput)
 	}
-	var ips []string
+	// ⚡ Bolt Optimization: Pre-allocate slice and reuse IP buffer to reduce memory allocations.
+	capacity := end - start + 1
+	ips := make([]string, 0, capacity)
+	ip := make(net.IP, 4)
 	for i := start; i <= end; i++ {
-		ip := make(net.IP, 4)
 		binary.BigEndian.PutUint32(ip, i)
 		ips = append(ips, ip.String())
 	}
