@@ -34,5 +34,3 @@ func GetMAC(ip string) string {
 	}
 	return osGetMAC(ip)
 }
-
-

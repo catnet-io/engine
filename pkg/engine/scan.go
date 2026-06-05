@@ -32,7 +32,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	}
 	if _, ok := ctx.Deadline(); !ok {
 		// Calcula timeout defensivo:
-		// Se cada ping/port timeout levar o tempo máximo sequencialmente, 
+		// Se cada ping/port timeout levar o tempo máximo sequencialmente,
 		// com threads em paralelo. Apenas um fallback.
 		maxTimePerHost := time.Duration(cfg.PingTimeoutMs) * time.Millisecond
 		if len(cfg.DefaultPorts) > 0 {
@@ -56,7 +56,6 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	close(ipChan)
 
 	var wg sync.WaitGroup
-
 
 	var processed int32
 	var mu sync.Mutex
