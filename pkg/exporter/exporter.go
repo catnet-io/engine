@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/mendsec/catnet-core/pkg/coreerr"
 	"github.com/mendsec/catnet-core/pkg/results"
 	"strconv"
 	"strings"
@@ -15,7 +16,7 @@ import (
 func ExportJSON(report *results.ScanReport) ([]byte, error) {
 	out, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode JSON: %w", err)
+		return nil, fmt.Errorf("%w: failed to encode JSON: %v", coreerr.ErrExport, err)
 	}
 	return out, nil
 }
@@ -44,7 +45,7 @@ func ExportXML(report *results.ScanReport) ([]byte, error) {
 	}
 	out, err := xml.MarshalIndent(res, "", "\t")
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode XML: %w", err)
+		return nil, fmt.Errorf("%w: failed to encode XML: %v", coreerr.ErrExport, err)
 	}
 	return append([]byte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"), out...), nil
 }
@@ -65,7 +66,7 @@ func ExportCSV(report *results.ScanReport) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "Open Ports"}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: failed to write CSV header: %v", coreerr.ErrExport, err)
 	}
 	for _, d := range report.Devices {
 		status := "Dead"
@@ -79,7 +80,7 @@ func ExportCSV(report *results.ScanReport) ([]byte, error) {
 		if err := writer.Write([]string{
 			sanitizeCSVField(d.IP), sanitizeCSVField(d.Hostname), sanitizeCSVField(d.MAC), status, strings.Join(strPorts, ";"),
 		}); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: failed to write CSV record: %v", coreerr.ErrExport, err)
 		}
 	}
 	writer.Flush()

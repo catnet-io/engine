@@ -15,7 +15,7 @@ Before adopting `catnet-core`, please review our [API Stability Policy](docs/con
 | `pkg/targets` | `ParseRange` | Target parsing and CIDR utilities. |
 | `pkg/discovery` | `Ping`, `ReverseDNS`, `GetMAC` | Host liveness and resolution primitives. |
 | `pkg/ports` | `ScanPorts` | Port scanning utilities. |
-| `pkg/exporter` | `ExportJSON`, `ExportXML`, `ExportCSV` | Safe result export functions (with CSV injection prevention). |
+| `pkg/exporter` | `ExportJSON`, `ExportXML`, `ExportCSV` | Safe result export functions. JSON is the canonical schema reference format. |
 | `pkg/scanner` | *Deprecated* | Temporary compatibility wrapper. Do not use for new code. |
 
 ## Quickstart
@@ -39,16 +39,25 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err := engine.StartScan(ctx, ips, cfg, func(d results.DeviceInfo) {
-		if d.IsAlive {
-			fmt.Printf("Found: %s (%s)\n", d.IP, d.MAC)
+	report, err := engine.StartScan(ctx, ips, cfg, func(event engine.ScanEvent) {
+		switch event.Type {
+		case engine.EventResult:
+			if event.Device != nil && event.Device.IsAlive {
+				fmt.Printf("Found: %s (%s)\n", event.Device.IP, event.Device.MAC)
+			}
+		case engine.EventProgress:
+			fmt.Printf("Progress: %.2f%%\n", event.Progress*100)
+		case engine.EventLifecycleStart:
+			fmt.Println("Scan started...")
+		case engine.EventLifecycleComplete:
+			fmt.Println("Scan completed!")
 		}
-	}, func(progress float64) {
-		fmt.Printf("Progress: %.2f%%\n", progress*100)
 	})
 
 	if err != nil {
 		fmt.Printf("Scan failed: %v\n", err)
+	} else {
+		fmt.Printf("Total Scanned: %d, Alive: %d\n", report.Total, report.Alive)
 	}
 }
 ```
