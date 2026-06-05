@@ -4,7 +4,11 @@ Shared Go engine for the CatNet scanning ecosystem.
 
 ## Documentation & Contracts
 
-Before adopting `catnet-core`, please review our [API Stability Policy](docs/contracts/api-stability.md).
+Before adopting `catnet-core`, please review our documentation:
+- [API Stability Policy](docs/contracts/api-stability.md)
+- [Compatibility Policy](docs/contracts/compatibility.md)
+- [Integration Examples](docs/examples/integration_examples.md)
+- [Project Roadmap](ROADMAP.md)
 
 ## Packages
 
