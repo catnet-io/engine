@@ -18,7 +18,7 @@ O projeto adota uma arquitetura modular de biblioteca padrão em Go, desenhada p
 - **`pkg/exporter`**: Centraliza os formatos de saída (JSON, CSV, XML). Nota positiva para o fato de o JSON ser considerado o "reference schema format".
 
 **Separação internal/ vs pkg/:**
-Existe uma divisão estrita. O diretório `pkg/` abriga os contratos de API suportados, enquanto o `internal/` guarda lógicas sem garantia de estabilidade (`netutil`). O uso anterior do `pkg/scanner` foi refatorado, reforçando que a arquitetura evoluiu ativamente para pacotes mais granulares.
+Existe uma divisão estrita. O diretório `pkg/` abriga os contratos de API suportados, enquanto o `internal/` contém apenas `netutil`, com utilitários de validação de IP sem garantia de estabilidade pública. O uso anterior do `pkg/scanner` foi completamente refatorado para pacotes de domínio granulares; o pacote permanece apenas como shim de retrocompatibilidade **deprecated**.
 
 ### Qualidade de Código
 - **Legibilidade**: Excelente. As responsabilidades estão bem distribuídas. 
@@ -28,7 +28,7 @@ Existe uma divisão estrita. O diretório `pkg/` abriga os contratos de API supo
 - **Comentários**: Códigos essenciais estão documentados. Presença correta do arquivo `tests/doc.go`.
 
 ### Infraestrutura de Desenvolvimento
-- **Dependências (`go.mod`)**: O projeto requer `go 1.26.4` e, de forma impressionante, parece não depender de bibliotecas externas (zero-dependency core), o que é um fator gigante de segurança.
+- **Dependências (`go.mod`)**: O projeto requer `go 1.26.4` e, de forma impressionante, não depende de bibliotecas externas (zero-dependency core), o que é um fator gigante de segurança.
 - **CI/CD (`.github/workflows`)**: Existem pipelines bem configurados: `ci.yml` rodando `go vet` e `go test -race -v`, garantindo checagem de concorrência. Adicionalmente, há o workflow semanal de `govulncheck` auditando falhas.
 - **Testes**: Há forte cultura de testes visível na separação de suítes de testes nos pacotes locais, além de testes E2E/Integração robustos em `tests/integration_test.go` valendo-se do diretório de fixtures `testdata/`.
 - **Padrões de Ferramentas**: Conta com configuração estrita de formatação (tab em Go) via `.editorconfig`.

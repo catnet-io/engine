@@ -6,46 +6,50 @@ A ausência de abstrações de interface desnecessárias e dependências garante
 
 ## Estrutura de Pacotes
 
-A base do código é modular, dividida em pacotes focados:
+A base do código é modular, dividida em 6 pacotes de domínio focados, além de utilitários internos:
 
 ### 1. `pkg/engine`
-Orquestrador principal. O `StartScan` distribui a carga de trabalho para uma pool de goroutines, emitindo eventos de progresso via callback. O controle de fluxo e timeouts são garantidos por `context.Context` e controle de concorrência local, descartando estados globais ou variávies como `atomic.Bool` que causavam acoplamento.
+Orquestrador principal. A função `StartScan` distribui a carga de trabalho para uma pool de goroutines usando um índice atômico (`atomic.AddInt32`) para a distribuição, eliminando a necessidade de alocação de canal para cada IP. O controle de vida e timeouts são garantidos via `context.Context`. A arquitetura atual descarta estados globais.
 
 ### 2. `pkg/discovery`
-Encapsula primitivas de descoberta de rede e "liveness" (Ping, GetMAC, ReverseDNS).
-- *Windows*: Utiliza `syscall` para acessar a API do Windows (`iphlpapi.dll` via `SendARP`) evitando o spawn de subprocessos lentos sempre que possível.
-- *POSIX*: Faz fallback para comandos do sistema operacional (`ping` e `arp` via `os/exec`) assegurando compatibilidade geral.
+Encapsula as primitivas de descoberta de rede e "liveness" (ICMP, ARP e DNS reverso).
+Possui build tags separados:
+- *Windows*: Utiliza chamadas nativas de sistema (`iphlpapi.dll` via `SendARP`).
+- *POSIX*: Implementa um fast path lendo diretamente do `/proc/net/arp` com fallback para o comando `arp -an` via `os/exec`.
 
 ### 3. `pkg/ports`
-Responsável pela lógica de varredura de portas (port scanning), permitindo a checagem paralela e o discover de serviços na rede.
+Responsável pela varredura TCP concorrente. Implementa um semáforo de concorrência com `ScanConcurrency = 10` conexões simultâneas por IP.
 
 ### 4. `pkg/targets`
-Isola a lógica de parsing e tratamento de alvos. Capaz de entender e traduzir sub-redes CIDR (`/24`), intervalos com hífen (`192.168.1.10-20`) e IPs unitários em blocos compatíveis para varredura.
+Isola a lógica de parsing e tratamento de alvos, suportando formatos CIDR (`/24`), intervalos com hífen e IPs unitários. Contém proteção contra OOM (limite máximo de 65536 IPs) e previne loops infinitos na decodificação.
 
 ### 5. `pkg/results`
-Define as estruturas de dados canônicas do sistema (como `ScanReport` e `DeviceInfo`), atuando como contrato central para todos os módulos que produzem ou consomem resultados.
+Define o contrato canônico de dados do sistema (como `ScanReport` e `DeviceInfo`). Não expõe campos redundantes como `OpenPortsCount`; em seu lugar, utiliza-se o método `PortCount()`.
 
 ### 6. `pkg/exporter`
-Separa estritamente a varredura da serialização. Recebe as structs completas (`results.DeviceInfo`) e as formata em padrões de mercado, garantindo a integridade dos dados gerados.
-- Formatos suportados: `JSON`, `XML` e `CSV`.
-- Segurança: A função de exportação para CSV traz sanitização embutida para mitigar vulnerabilidades de Injeção de CSV (CSV Injection), filtrando prefixos de execução maliciosa originados nas resoluções de Hostname e vendor.
+Responsável pela serialização estrita para os formatos JSON, XML e CSV. Inclui sanitização nativa para mitigar vulnerabilidades de Injeção de CSV (CSV Injection), filtrando prefixos de execução maliciosa.
+
+### Pacotes Internos e Deprecated
+
+- **`internal/netutil`**: Contém utilitários para validação interna de IPv4.
+- **`pkg/scanner`**: Atua puramente como um shim de retrocompatibilidade e está atualmente **deprecated**.
 
 ## Diagrama de Execução
 
 ```mermaid
 flowchart TD
-    App[Frontend / CLI / TUI] -->|1. Passa Lista de IPs e ScanConfig| EngineCore(pkg/engine)
+    App[Frontend / CLI / TUI / catnet] -->|1. Inicia StartScan| EngineCore(pkg/engine)
     
     subgraph EngineCore
-      StartScan --> |Goroutine Pool| Workers
-      Workers --> Targets[pkg/targets]
+      StartScan --> |Índice Atômico / Goroutines| Workers
       Workers --> Discovery[pkg/discovery]
       Workers --> Ports[pkg/ports]
+      Workers --> Targets[pkg/targets]
     end
 
-    EngineCore -->|2. Emite onResult e onProgress callbacks usando pkg/results| App
+    EngineCore -->|2. Emite eventos via EventCallback usando pkg/results| App
 
-    App -->|3. Passa relatórios para exportação| ExporterCore(pkg/exporter)
+    App -->|3. Envia para serialização| ExporterCore(pkg/exporter)
     
     subgraph ExporterCore
       ExportJSON

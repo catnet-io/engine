@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING CHANGE**: Removed `OpenPortsCount` field from `DeviceInfo` struct to eliminate redundancy and potential state corruption. Use the new `PortCount()` method instead.
 - Improved defensive timeout calculation in `StartScan` by considering concurrent port scan batches, avoiding overestimated timeouts.
-- Updated minimum Go version requirement to `1.23.0` in `go.mod` and CI workflows.
+- Updated minimum Go version requirement to `1.26.4` in `go.mod` and `1.26.x` in CI workflows.
 
 ### Fixed
 - Fixed pointer memory aliasing bug in `EventCallback` within `StartScan` loop, ensuring consumers receive a safe, distinct copy of `DeviceInfo`.
