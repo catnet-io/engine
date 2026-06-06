@@ -1,4 +1,4 @@
-﻿# Contributing
+# Contributing
 
 Thank you for your interest in contributing to CatNet.
 
@@ -17,3 +17,6 @@ Thank you for your interest in contributing to CatNet.
 
 ## Scope rule
 UI repositories must not duplicate core scanning logic.
+
+## Licensing
+By contributing to this project, you agree that your contributions will be licensed under its MIT License.
