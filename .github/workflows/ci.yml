@@ -15,8 +15,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          # Revise Go version upon every minor release of Go (e.g. 1.24)
-          go-version: "1.23.x"
+          # Revise Go version upon every minor release of Go
+          go-version: "1.25.x"
 
       - name: Verify dependencies
         run: go mod verify
