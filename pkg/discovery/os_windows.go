@@ -3,6 +3,7 @@
 package discovery
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os/exec"
@@ -11,11 +12,14 @@ import (
 )
 
 // osPing faz ping no Windows
-func osPing(ip string, timeoutMs int) bool {
+func osPing(ctx context.Context, ip string, timeoutMs int) bool {
+	if net.ParseIP(ip) == nil {
+		return false
+	}
 	if timeoutMs <= 0 {
 		timeoutMs = 1000 // safe default
 	}
-	cmd := exec.Command("ping", "-n", "1", "-w", fmt.Sprintf("%d", timeoutMs), ip)
+	cmd := exec.CommandContext(ctx, "ping", "-n", "1", "-w", fmt.Sprintf("%d", timeoutMs), ip)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	return cmd.Run() == nil
 }

@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"context"
 	"net"
 	"sort"
 	"strconv"
@@ -15,7 +16,7 @@ const ScanConcurrency = 10
 
 // ScanPorts varre uma lista de portas em um IP e retorna as abertas.
 // ⚡ Bolt Optimization: Concurrently scan ports to prevent cumulative timeouts from blocking the scan.
-func ScanPorts(ip string, ports []int, timeoutMs int) []int {
+func ScanPorts(ctx context.Context, ip string, ports []int, timeoutMs int) []int {
 	if err := netutil.ValidateIPv4(ip); err != nil {
 		return nil
 	}
@@ -35,9 +36,14 @@ func ScanPorts(ip string, ports []int, timeoutMs int) []int {
 		go func(p int) {
 			defer wg.Done()
 			defer func() { <-sem }()
+			
+			if ctx.Err() != nil {
+				return
+			}
 
 			address := net.JoinHostPort(ip, strconv.Itoa(p))
-			conn, err := net.DialTimeout("tcp", address, timeout)
+			dialer := net.Dialer{Timeout: timeout}
+			conn, err := dialer.DialContext(ctx, "tcp", address)
 			if err == nil {
 				conn.Close()
 				mu.Lock()

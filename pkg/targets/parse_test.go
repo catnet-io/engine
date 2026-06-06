@@ -42,3 +42,18 @@ func BenchmarkParseRange(b *testing.B) {
 		_, _ = ParseRange(input)
 	}
 }
+
+func FuzzParseRange(f *testing.F) {
+	f.Add("10.0.0.1")
+	f.Add("192.168.1.0/24")
+	f.Add("192.168.1.1-192.168.1.10")
+	f.Add("10.0.0.1-255")
+	f.Add("invalid")
+	f.Add("10.0.0.0/0")
+	f.Add("10.0.0.0/33")
+	
+	f.Fuzz(func(t *testing.T, input string) {
+		// The goal of fuzzing here is to ensure ParseRange never panics on malformed input.
+		ParseRange(input)
+	})
+}

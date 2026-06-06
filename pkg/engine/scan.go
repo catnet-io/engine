@@ -93,11 +93,13 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 					return
 				default:
 					di := results.DeviceInfo{IP: ip}
-					di.IsAlive = discovery.Ping(ip, cfg.PingTimeoutMs)
-					if di.IsAlive {
+					di.IsAlive = discovery.Ping(ctx, ip, cfg.PingTimeoutMs)
+					if di.IsAlive && ctx.Err() == nil {
 						di.Hostname = discovery.ReverseDNS(ip)
 						di.MAC = discovery.GetMAC(ip)
-						di.OpenPorts = ports.ScanPorts(ip, cfg.DefaultPorts, cfg.PortTimeoutMs)
+						if ctx.Err() == nil {
+							di.OpenPorts = ports.ScanPorts(ctx, ip, cfg.DefaultPorts, cfg.PortTimeoutMs)
+						}
 					}
 
 					mu.Lock()
