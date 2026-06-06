@@ -52,17 +52,15 @@ func ExportXML(report *results.ScanReport) ([]byte, error) {
 
 // sanitizeCSVField limpa caracteres perigosos para prevenção de injeção CSV.
 func sanitizeCSVField(field string) string {
+	field = strings.ReplaceAll(field, "\n", " ")
+	field = strings.ReplaceAll(field, "\r", " ")
+
 	if len(field) == 0 {
 		return field
 	}
 	
 	fc := field[0]
-	if fc == '=' || fc == '+' || fc == '-' || fc == '@' || fc == '\t' || fc == '\r' || fc == '\n' {
-		return "'" + field
-	}
-	
-	// Previne injeções que tentam escapar da célula atual usando quebras de linha
-	if strings.ContainsAny(field, "\n\r") {
+	if fc == '=' || fc == '+' || fc == '-' || fc == '@' || fc == '\t' {
 		return "'" + field
 	}
 	
