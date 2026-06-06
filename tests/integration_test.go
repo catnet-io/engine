@@ -32,7 +32,7 @@ func TestEndToEndScanAndExport(t *testing.T) {
 		if line == "" {
 			continue
 		}
-		
+
 		// We only parse the subset we want to test to keep the test fast
 		// e.g. the single IP and the dash range
 		if strings.Contains(line, "/") {

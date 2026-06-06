@@ -5,11 +5,11 @@ type ScanConfig struct {
 	DefaultPorts  []int `json:"defaultPorts"`
 	PortTimeoutMs int   `json:"portTimeoutMs"`
 	PingTimeoutMs int   `json:"pingTimeoutMs"`
-	
+
 	// MaxThreads define o nível de paralelismo da varredura.
 	// O motor impõe um limite máximo rigoroso de 256 threads para prevenir exaustão
 	// de sockets no host (ulimit issues) e um mínimo de 1.
-	MaxThreads    int   `json:"maxThreads"`
+	MaxThreads int `json:"maxThreads"`
 }
 
 // DefaultConfig retorna uma ScanConfig com valores padrão conservadores.
