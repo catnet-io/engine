@@ -3,27 +3,36 @@
 package discovery
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
 // osPing faz ping em sistemas POSIX
-func osPing(ip string, timeoutMs int) bool {
+func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 	if net.ParseIP(ip) == nil {
 		return false
 	}
 	if timeoutMs <= 0 {
 		timeoutMs = 1000 // safe default
 	}
-	// POSIX ping command only accepts whole seconds for timeout.
-	timeoutSecs := timeoutMs / 1000
-	if timeoutSecs < 1 {
-		timeoutSecs = 1
+	var timeoutVal string
+	if runtime.GOOS == "darwin" {
+		// macOS ping -W uses milliseconds
+		timeoutVal = fmt.Sprintf("%d", timeoutMs)
+	} else {
+		// Linux ping -W uses seconds
+		timeoutSecs := timeoutMs / 1000
+		if timeoutSecs < 1 {
+			timeoutSecs = 1
+		}
+		timeoutVal = fmt.Sprintf("%d", timeoutSecs)
 	}
-	cmd := exec.Command("ping", "-c", "1", "-W", fmt.Sprintf("%d", timeoutSecs), ip)
+	cmd := exec.CommandContext(ctx, "ping", "-c", "1", "-W", timeoutVal, ip)
 	return cmd.Run() == nil
 }
 

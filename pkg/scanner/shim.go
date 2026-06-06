@@ -31,7 +31,7 @@ func ParseRange(input string) ([]string, error) {
 
 // Ping is deprecated: Use discovery.Ping instead.
 func Ping(ip string, timeoutMs int) bool {
-	return discovery.Ping(ip, timeoutMs)
+	return discovery.Ping(context.Background(), ip, timeoutMs)
 }
 
 // ReverseDNS is deprecated: Use discovery.ReverseDNS instead.
@@ -46,7 +46,7 @@ func GetMAC(ip string) string {
 
 // ScanPorts is deprecated: Use ports.ScanPorts instead.
 func ScanPorts(ip string, portsList []int, timeoutMs int) []int {
-	return ports.ScanPorts(ip, portsList, timeoutMs)
+	return ports.ScanPorts(context.Background(), ip, portsList, timeoutMs)
 }
 
 var (

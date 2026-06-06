@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"context"
 	"net"
 	"strings"
 
@@ -8,11 +9,11 @@ import (
 )
 
 // Ping realiza um ping ICMP na máquina com timeout em milissegundos.
-func Ping(ip string, timeoutMs int) bool {
+func Ping(ctx context.Context, ip string, timeoutMs int) bool {
 	if err := netutil.ValidateIPv4(ip); err != nil {
 		return false
 	}
-	return osPing(ip, timeoutMs)
+	return osPing(ctx, ip, timeoutMs)
 }
 
 // ReverseDNS resolve o nome do host do endereço IP dado.
