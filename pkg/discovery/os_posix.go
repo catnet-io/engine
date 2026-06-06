@@ -3,6 +3,7 @@
 package discovery
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -14,7 +15,15 @@ func osPing(ip string, timeoutMs int) bool {
 	if net.ParseIP(ip) == nil {
 		return false
 	}
-	cmd := exec.Command("ping", "-c", "1", "-W", "1", ip)
+	if timeoutMs <= 0 {
+		timeoutMs = 1000 // safe default
+	}
+	// POSIX ping command only accepts whole seconds for timeout.
+	timeoutSecs := timeoutMs / 1000
+	if timeoutSecs < 1 {
+		timeoutSecs = 1
+	}
+	cmd := exec.Command("ping", "-c", "1", "-W", fmt.Sprintf("%d", timeoutSecs), ip)
 	return cmd.Run() == nil
 }
 
