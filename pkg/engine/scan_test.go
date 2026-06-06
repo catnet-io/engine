@@ -57,6 +57,41 @@ func TestScanConcurrency(t *testing.T) {
 	}
 }
 
+func TestScanEventPointerAliasing(t *testing.T) {
+	ips := []string{"192.0.2.1", "192.0.2.2", "192.0.2.3"}
+	cfg := DefaultConfig()
+	cfg.PingTimeoutMs = 1
+	cfg.MaxThreads = 1 // Single thread makes loop reuse the same variable if aliasing exists
+
+	var mu sync.Mutex
+	var pointers []*results.DeviceInfo
+
+	_, err := StartScan(context.Background(), ips, cfg, func(event ScanEvent) {
+		if event.Type == EventResult && event.Device != nil {
+			mu.Lock()
+			pointers = append(pointers, event.Device)
+			mu.Unlock()
+		}
+	})
+
+	if err != nil {
+		t.Fatalf("StartScan failed: %v", err)
+	}
+
+	if len(pointers) != len(ips) {
+		t.Fatalf("Expected %d results, got %d", len(ips), len(pointers))
+	}
+
+	// Verify that each pointer points to a distinct IP, meaning pointers are not aliased
+	ipMap := make(map[string]bool)
+	for _, ptr := range pointers {
+		if ipMap[ptr.IP] {
+			t.Errorf("Duplicate IP found, pointer aliasing issue detected: %s", ptr.IP)
+		}
+		ipMap[ptr.IP] = true
+	}
+}
+
 func TestScanCancellation(t *testing.T) {
 	ips := make([]string, 100)
 	for i := 0; i < 100; i++ {
@@ -67,7 +102,7 @@ func TestScanCancellation(t *testing.T) {
 	cfg.MaxThreads = 2
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Cancel almost immediately
 	go func() {
 		time.Sleep(5 * time.Millisecond)
@@ -126,5 +161,34 @@ func BenchmarkStartScan(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = StartScan(context.Background(), ips, cfg, nil)
+	}
+}
+
+func TestStartScanDefensiveTimeout(t *testing.T) {
+	ips := []string{"192.0.2.1"}
+	cfg := DefaultConfig()
+	cfg.PingTimeoutMs = 100
+	cfg.PortTimeoutMs = 200
+	// 25 ports with concurrency of 10 means 3 batches.
+	// 3 batches * 200ms = 600ms for ports.
+	// 100ms ping + 600ms ports = 700ms max per host.
+	// 1 host / 1 thread = 700ms total + 1 min buffer.
+	cfg.DefaultPorts = make([]int, 25)
+	cfg.MaxThreads = 1
+
+	start := time.Now()
+	// Pass context without deadline so defensivo timeout applies
+	_, err := StartScan(context.Background(), ips, cfg, nil)
+	duration := time.Since(start)
+
+	if err != nil {
+		t.Fatalf("StartScan failed: %v", err)
+	}
+
+	// The actual scan will finish almost instantly since 192.0.2.1 doesn't respond and times out.
+	// Wait, the defensive timeout calculation shouldn't affect the normal execution time.
+	// But we just want to ensure it doesn't crash or create an incorrectly small timeout that fails the scan immediately.
+	if duration > 5*time.Second {
+		t.Errorf("Scan took too long, might be stuck")
 	}
 }

@@ -10,6 +10,9 @@ import (
 	"github.com/mendsec/catnet-core/internal/netutil"
 )
 
+// ScanConcurrency define o número máximo de conexões TCP simultâneas por IP.
+const ScanConcurrency = 10
+
 // ScanPorts varre uma lista de portas em um IP e retorna as abertas.
 // ⚡ Bolt Optimization: Concurrently scan ports to prevent cumulative timeouts from blocking the scan.
 func ScanPorts(ip string, ports []int, timeoutMs int) []int {
@@ -23,7 +26,7 @@ func ScanPorts(ip string, ports []int, timeoutMs int) []int {
 	var mu sync.Mutex
 
 	// Limit concurrent connections per IP to prevent FD exhaustion
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, ScanConcurrency)
 
 	for _, port := range ports {
 		wg.Add(1)

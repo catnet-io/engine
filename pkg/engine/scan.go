@@ -51,11 +51,11 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	}
 	if _, ok := ctx.Deadline(); !ok {
 		// Calcula timeout defensivo:
-		// Se cada ping/port timeout levar o tempo máximo sequencialmente,
-		// com threads em paralelo. Apenas um fallback.
+		// Assumindo port scan concorrente com ports.ScanConcurrency workers
 		maxTimePerHost := time.Duration(cfg.PingTimeoutMs) * time.Millisecond
 		if len(cfg.DefaultPorts) > 0 {
-			maxTimePerHost += time.Duration(len(cfg.DefaultPorts)) * time.Duration(cfg.PortTimeoutMs) * time.Millisecond
+			portBatches := (len(cfg.DefaultPorts) + ports.ScanConcurrency - 1) / ports.ScanConcurrency
+			maxTimePerHost += time.Duration(portBatches) * time.Duration(cfg.PortTimeoutMs) * time.Millisecond
 		}
 		maxDuration := time.Duration(total) * maxTimePerHost / time.Duration(threads)
 		maxDuration += time.Minute // Buffer de segurança
@@ -94,7 +94,6 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 						di.Hostname = discovery.ReverseDNS(ip)
 						di.MAC = discovery.GetMAC(ip)
 						di.OpenPorts = ports.ScanPorts(ip, cfg.DefaultPorts, cfg.PortTimeoutMs)
-						di.OpenPortsCount = len(di.OpenPorts)
 					}
 
 					mu.Lock()
@@ -106,9 +105,12 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 
 					curr := atomic.AddInt32(&processed, 1)
 					if onEvent != nil {
+						// Cria cópia explícita para o callback para evitar que consumidores
+						// assíncronos recebam um ponteiro para a variável que pode ser modificada ou escapar.
+						diCopy := di
 						onEvent(ScanEvent{
 							Type:     EventResult,
-							Device:   &di,
+							Device:   &diCopy,
 							Progress: float64(curr) / float64(total),
 						})
 						onEvent(ScanEvent{
