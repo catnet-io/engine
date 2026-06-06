@@ -1,5 +1,12 @@
 # catnet-core
 
+[![CI Status](https://img.shields.io/github/actions/workflow/status/mendsec/catnet-core/ci.yml?branch=main&style=flat-square)](https://github.com/mendsec/catnet-core/actions/workflows/ci.yml)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/mendsec/catnet-core?style=flat-square)](https://go.dev/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mendsec/catnet-core?style=flat-square)](https://goreportcard.com/report/github.com/mendsec/catnet-core)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![pkg.go.dev](https://img.shields.io/badge/pkg.go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/mendsec/catnet-core)
+[![Latest Release](https://img.shields.io/github/v/release/mendsec/catnet-core?style=flat-square)](https://github.com/mendsec/catnet-core/releases)
+
 Shared Go engine for the CatNet scanning ecosystem.
 
 ## Documentation & Contracts
@@ -79,3 +86,7 @@ func main() {
 
 Current version: v0.1.0
 See [CHANGELOG.md](CHANGELOG.md) for details.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
