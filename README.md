@@ -78,13 +78,13 @@ func main() {
 | Repository | Role |
 |---|---|
 | [`catnet-core`](https://github.com/mendsec/catnet-core) | Shared Go engine — no GUI |
-| [`catnet-scanner`](https://github.com/mendsec/catnet-scanner) | Desktop frontend (Go + Wails + React) |
+| [`catnet-scanner`](https://github.com/mendsec/catnet-scanner) | Desktop frontend (Raygui) — Planned evolution to Wails + React |
 | [`catnet`](https://github.com/mendsec/catnet) | Scriptable Go CLI |
 | [`catnet-tui`](https://github.com/mendsec/catnet-tui) | Interactive TUI (Go + Bubble Tea) |
 
 ## Status
 
-Current version: v0.1.0
+Current version: v0.2.0
 See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## License
