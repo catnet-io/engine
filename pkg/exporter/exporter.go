@@ -58,12 +58,12 @@ func sanitizeCSVField(field string) string {
 	if len(field) == 0 {
 		return field
 	}
-	
+
 	fc := field[0]
 	if fc == '=' || fc == '+' || fc == '-' || fc == '@' || fc == '\t' {
 		return "'" + field
 	}
-	
+
 	return field
 }
 
