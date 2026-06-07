@@ -47,8 +47,8 @@ func ScanPorts(ctx context.Context, ip string, ports []int, timeoutMs int) []int
 					return
 				}
 
-				idx := atomic.AddInt32(&index, 1)
-				if int(idx) >= len(ports) {
+				idx := int(atomic.AddInt32(&index, 1))
+				if idx >= len(ports) {
 					return
 				}
 				p := ports[idx]
