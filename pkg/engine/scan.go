@@ -9,6 +9,7 @@ import (
 
 	"github.com/mendsec/catnet-core/pkg/coreerr"
 	"github.com/mendsec/catnet-core/pkg/discovery"
+	"github.com/mendsec/catnet-core/pkg/fingerprint"
 	"github.com/mendsec/catnet-core/pkg/ports"
 	"github.com/mendsec/catnet-core/pkg/results"
 )
@@ -99,6 +100,11 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 						di.MAC = discovery.GetMAC(ip)
 						if ctx.Err() == nil {
 							di.OpenPorts = ports.ScanPorts(ctx, ip, cfg.DefaultPorts, cfg.PortTimeoutMs)
+							fp := fingerprint.Fingerprint(ctx, ip, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+							di.OS = fp.OS
+							di.OSFamily = fp.OSFamily
+							di.DeviceType = string(fp.DeviceType)
+							di.Vendor = fp.Vendor
 						}
 					}
 

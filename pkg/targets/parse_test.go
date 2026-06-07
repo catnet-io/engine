@@ -51,7 +51,7 @@ func FuzzParseRange(f *testing.F) {
 	f.Add("invalid")
 	f.Add("10.0.0.0/0")
 	f.Add("10.0.0.0/33")
-	
+
 	f.Fuzz(func(t *testing.T, input string) {
 		// The goal of fuzzing here is to ensure ParseRange never panics on malformed input.
 		ParseRange(input)

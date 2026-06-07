@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mendsec/catnet-core/internal/netutil"
@@ -26,31 +27,43 @@ func ScanPorts(ctx context.Context, ip string, ports []int, timeoutMs int) []int
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
+	// ⚡ Bolt Optimization: Replace channel semaphore with a lock-free atomic index counter.
+	// Bypasses the O(N) goroutine allocation and channel operations upfront,
+	// drastically reducing memory overhead and improving throughput.
+	var index int32 = -1
+
 	// Limit concurrent connections per IP to prevent FD exhaustion
-	sem := make(chan struct{}, ScanConcurrency)
+	workers := ScanConcurrency
+	if len(ports) < workers {
+		workers = len(ports)
+	}
 
-	for _, port := range ports {
+	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		sem <- struct{}{}
-
-		go func(p int) {
+		go func() {
 			defer wg.Done()
-			defer func() { <-sem }()
-			
-			if ctx.Err() != nil {
-				return
-			}
+			for {
+				if ctx.Err() != nil {
+					return
+				}
 
-			address := net.JoinHostPort(ip, strconv.Itoa(p))
-			dialer := net.Dialer{Timeout: timeout}
-			conn, err := dialer.DialContext(ctx, "tcp", address)
-			if err == nil {
-				conn.Close()
-				mu.Lock()
-				openPorts = append(openPorts, p)
-				mu.Unlock()
+				idx := int(atomic.AddInt32(&index, 1))
+				if idx >= len(ports) {
+					return
+				}
+				p := ports[idx]
+
+				address := net.JoinHostPort(ip, strconv.Itoa(p))
+				dialer := net.Dialer{Timeout: timeout}
+				conn, err := dialer.DialContext(ctx, "tcp", address)
+				if err == nil {
+					conn.Close()
+					mu.Lock()
+					openPorts = append(openPorts, p)
+					mu.Unlock()
+				}
 			}
-		}(port)
+		}()
 	}
 
 	wg.Wait()
