@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "2.0.0",
   "startTime": "2026-06-05T12:00:00Z",
   "endTime": "2026-06-05T12:00:05Z",
   "total": 3,
@@ -10,6 +10,10 @@
       "mac": "AA:BB:CC:DD:EE:01",
       "hostname": "router.local",
       "isAlive": true,
+      "os": "Linux",
+      "osFamily": "linux",
+      "deviceType": "router",
+      "vendor": "Cisco",
       "openPorts": [80, 443]
     },
     {
@@ -17,6 +21,10 @@
       "mac": "AA:BB:CC:DD:EE:02",
       "hostname": "server.local",
       "isAlive": true,
+      "os": "Ubuntu",
+      "osFamily": "linux",
+      "deviceType": "server",
+      "vendor": "Dell",
       "openPorts": [22]
     },
     {

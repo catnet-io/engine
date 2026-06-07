@@ -81,8 +81,8 @@ func TestEndToEndScanAndExport(t *testing.T) {
 	}
 
 	// Validate report
-	if report.SchemaVersion != "1.0.0" {
-		t.Errorf("Expected SchemaVersion 1.0.0, got %s", report.SchemaVersion)
+	if report.SchemaVersion != "2.0.0" {
+		t.Errorf("Expected SchemaVersion 2.0.0, got %s", report.SchemaVersion)
 	}
 	if report.Total != len(allIPs) {
 		t.Errorf("Expected Total %d, got %d", len(allIPs), report.Total)
