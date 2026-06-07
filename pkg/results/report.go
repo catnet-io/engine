@@ -15,7 +15,7 @@ type ScanReport struct {
 // NewScanReport cria um novo relatório de varredura.
 func NewScanReport() *ScanReport {
 	return &ScanReport{
-		SchemaVersion: "1.0.0",
+		SchemaVersion: "2.0.0",
 		StartTime:     time.Now(),
 		Devices:       []DeviceInfo{},
 	}
