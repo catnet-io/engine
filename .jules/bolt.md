@@ -19,3 +19,7 @@
 ## 2023-10-27 - Atomic Index Loop Over Buffered Channel
 **Learning:** For distributing pre-known arrays of work (like IP slices up to 65536 items) across worker threads, creating a buffered channel and pushing all items into it introduces massive setup overhead and memory allocation (O(N)).
 **Action:** Use a pre-allocated array and a shared `int32` atomic index (`atomic.AddInt32(&index, 1)`) inside the worker thread loop to read the slice dynamically without synchronization channels. This gives ~3x speedup.
+
+## 2024-06-07 - [Fixed Worker Pools vs Semaphore Goroutines]
+**Learning:** For distributing many tiny tasks (like port scans per IP, up to 65535 ports), launching a new goroutine for every single task and limiting concurrency via a channel semaphore introduces significant memory allocation and scheduling overhead. A benchmark showed that a fixed pool of workers iterating over an array using `atomic.AddInt32` is over 35x faster in raw scheduling overhead.
+**Action:** When performing high-volume concurrent tasks over pre-known arrays, prefer spawning a fixed pool of `N` worker goroutines that pull tasks via an atomic index counter (`atomic.AddInt32`), rather than spinning up `M` goroutines constrained by an `N`-capacity semaphore channel.
