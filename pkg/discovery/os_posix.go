@@ -3,6 +3,7 @@
 package discovery
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -46,17 +47,50 @@ func osGetMAC(ip string) string {
 
 	// Fast path for Linux
 	if data, err := os.ReadFile("/proc/net/arp"); err == nil {
-		lines := strings.Split(string(data), "\n")
-		for _, line := range lines {
-			fields := strings.Fields(line)
-			if len(fields) >= 4 && fields[0] == ip {
-				mac := fields[3]
+		// ⚡ Bolt Optimization: Use zero-allocation bytes indexing to scan large ARP tables.
+		// Avoids massive strings.Split and strings.Fields memory overhead on systems with thousands of neighbors.
+		ipSpace := []byte("\n" + ip + " ")
+		ipTab := []byte("\n" + ip + "\t")
+
+		dataToSearch := data
+		for {
+			idx := bytes.Index(dataToSearch, ipSpace)
+			if idx == -1 {
+				idx = bytes.Index(dataToSearch, ipTab)
+			}
+
+			// Edge case: target is on the very first line without a preceding newline
+			if idx == -1 && (bytes.HasPrefix(dataToSearch, []byte(ip+" ")) || bytes.HasPrefix(dataToSearch, []byte(ip+"\t"))) {
+				idx = -1 // Indicates start of slice
+			} else if idx == -1 {
+				break
+			}
+
+			start := idx + 1
+			eol := bytes.IndexByte(dataToSearch[start:], '\n')
+			var line []byte
+			if eol == -1 {
+				line = dataToSearch[start:]
+			} else {
+				line = dataToSearch[start : start+eol]
+			}
+
+			fields := bytes.Fields(line)
+			if len(fields) >= 4 && string(fields[0]) == ip {
+				mac := string(fields[3])
 				// Ignore incomplete ARP entries
 				if mac != "00:00:00:00:00:00" {
 					return strings.ToUpper(strings.ReplaceAll(mac, ":", "-"))
 				}
+				break // Found the IP, but it's incomplete
 			}
+
+			if eol == -1 {
+				break
+			}
+			dataToSearch = dataToSearch[start+eol:]
 		}
+
 		// If we successfully read /proc/net/arp but didn't find the IP (or it was incomplete),
 		// we know the MAC is unresolved. Do not fall back to `arp -an` which would just re-verify the same miss.
 		return ""
