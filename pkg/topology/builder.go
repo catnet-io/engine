@@ -25,7 +25,7 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 
 	// 2. Create nodes
 	for _, dev := range report.Devices {
-		role := RoleUnknown
+		var role NodeRole
 		if dev.IP == gateway && gateway != "" {
 			role = RoleGateway
 		} else if !dev.IsAlive {
