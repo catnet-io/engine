@@ -23,3 +23,7 @@
 ## 2024-06-07 - [Fixed Worker Pools vs Semaphore Goroutines]
 **Learning:** For distributing many tiny tasks (like port scans per IP, up to 65535 ports), launching a new goroutine for every single task and limiting concurrency via a channel semaphore introduces significant memory allocation and scheduling overhead. A benchmark showed that a fixed pool of workers iterating over an array using `atomic.AddInt32` is over 35x faster in raw scheduling overhead.
 **Action:** When performing high-volume concurrent tasks over pre-known arrays, prefer spawning a fixed pool of `N` worker goroutines that pull tasks via an atomic index counter (`atomic.AddInt32`), rather than spinning up `M` goroutines constrained by an `N`-capacity semaphore channel.
+
+## 2023-10-25 - Zero-allocation parsing of `/proc/net/arp`
+**Learning:** In environments with heavily populated ARP tables, reading and converting `/proc/net/arp` into a string array using `strings.Split` and `strings.Fields` creates a significant O(N) memory allocation and garbage collection bottleneck. This degrades throughput heavily during highly concurrent per-IP discovery scans.
+**Action:** Always prefer zero-allocation byte indexing functions (`bytes.Index`, `bytes.Fields`) when parsing structured Linux system files (`/proc/*`) sequentially, particularly inside highly concurrent routines or high-frequency loops. Avoid unnecessary `string(data)` type conversions that force complete memory duplication.
