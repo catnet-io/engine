@@ -47,11 +47,11 @@ func grabBannerFromPort(ctx context.Context, ip string, port int, timeout time.D
 	})
 	defer stop()
 
-	conn.SetDeadline(time.Now().Add(timeout))
+	_ = conn.SetDeadline(time.Now().Add(timeout))
 
 	if port == 80 || port == 8080 {
 		req := "HEAD / HTTP/1.0\r\n\r\n"
-		conn.Write([]byte(req))
+		_, _ = conn.Write([]byte(req))
 	} else if port == 445 {
 		// Basic SMB negotiate request
 		smbReq := []byte{
@@ -63,7 +63,7 @@ func grabBannerFromPort(ctx context.Context, ip string, port int, timeout time.D
 			0x4e, 0x54, 0x20, 0x4c, 0x4d, 0x20, 0x30, 0x2e,
 			0x31, 0x32, 0x00,
 		}
-		conn.Write(smbReq)
+		_, _ = conn.Write(smbReq)
 	}
 
 	buf := make([]byte, 1024)
