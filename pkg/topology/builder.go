@@ -73,10 +73,12 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 			})
 		}
 
-		// Find /24 subnet
-		parts := strings.Split(dev.IP, ".")
-		if len(parts) == 4 {
-			subnet := strings.Join(parts[:3], ".")
+		// ⚡ Bolt Optimization: Use zero-allocation strings.LastIndexByte and string slicing
+		// instead of strings.Split and strings.Join to drastically reduce memory allocation
+		// and GC overhead when parsing subnets in high-volume topology building loops.
+		lastDot := strings.LastIndexByte(dev.IP, '.')
+		if lastDot != -1 {
+			subnet := dev.IP[:lastDot]
 			if subnetMap[subnet] == nil {
 				subnetMap[subnet] = make(map[int][]string)
 			}
