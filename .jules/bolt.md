@@ -27,3 +27,7 @@
 ## 2023-10-25 - Zero-allocation parsing of `/proc/net/arp`
 **Learning:** In environments with heavily populated ARP tables, reading and converting `/proc/net/arp` into a string array using `strings.Split` and `strings.Fields` creates a significant O(N) memory allocation and garbage collection bottleneck. This degrades throughput heavily during highly concurrent per-IP discovery scans.
 **Action:** Always prefer zero-allocation byte indexing functions (`bytes.Index`, `bytes.Fields`) when parsing structured Linux system files (`/proc/*`) sequentially, particularly inside highly concurrent routines or high-frequency loops. Avoid unnecessary `string(data)` type conversions that force complete memory duplication.
+
+## 2024-06-11 - Zero-allocation string prefixing
+**Learning:** Using `strings.Split` and `strings.Join` inside hot loop executions (like mapping IP subnets or querying MAC OUI prefixes on thousands of devices) causes severe memory allocation overhead and triggers frequent garbage collections due to dynamic array resizing.
+**Action:** Always replace `strings.Split` used solely for prefix extraction with allocation-free string iteration and manual index slicing (e.g., using `[]byte` looping to count `.` or `:` and returning the slice `str[:index]`).

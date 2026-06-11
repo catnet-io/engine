@@ -29,10 +29,22 @@ var ouiMap = map[string]string{
 func VendorFromMAC(mac string) string {
 	mac = strings.ToUpper(strings.TrimSpace(mac))
 	mac = strings.ReplaceAll(mac, "-", ":")
-	parts := strings.Split(mac, ":")
-	if len(parts) >= 3 {
-		prefix := strings.Join(parts[:3], ":")
-		if vendor, ok := ouiMap[prefix]; ok {
+
+	colonsFound := 0
+	for i := 0; i < len(mac); i++ {
+		if mac[i] == ':' {
+			colonsFound++
+			if colonsFound == 3 {
+				prefix := mac[:i]
+				if vendor, ok := ouiMap[prefix]; ok {
+					return vendor
+				}
+				return ""
+			}
+		}
+	}
+	if colonsFound == 2 {
+		if vendor, ok := ouiMap[mac]; ok {
 			return vendor
 		}
 	}
