@@ -28,6 +28,6 @@
 **Learning:** In environments with heavily populated ARP tables, reading and converting `/proc/net/arp` into a string array using `strings.Split` and `strings.Fields` creates a significant O(N) memory allocation and garbage collection bottleneck. This degrades throughput heavily during highly concurrent per-IP discovery scans.
 **Action:** Always prefer zero-allocation byte indexing functions (`bytes.Index`, `bytes.Fields`) when parsing structured Linux system files (`/proc/*`) sequentially, particularly inside highly concurrent routines or high-frequency loops. Avoid unnecessary `string(data)` type conversions that force complete memory duplication.
 
-## 2024-06-10 - Zero-allocation Subnet Extraction
-**Learning:** Extracting network parts from IP strings using `strings.Split` and `strings.Join` inside tight loops (like topology graph generation) generates massive amounts of short-lived objects (arrays, strings), increasing memory allocations and garbage collection overhead.
-**Action:** When extracting parts of a structured string like an IP address (e.g., extracting a /24 subnet), use zero-allocation string searching (`strings.LastIndexByte`) and string slicing (`ip[:lastDot]`) instead of split and join.
+## 2026-06-09 - Avoid string allocations in tight loops
+**Learning:** Using string manipulation functions like `strings.Split` and `strings.Join` inside O(n) loops (e.g., building graphs from large reports) causes massive and unnecessary allocation overhead (10-20 memory allocations per host due to slice/string buffers).
+**Action:** When extracting a specific part of a string (like a subnet from an IP address), prefer zero-allocation byte indexing functions (`strings.LastIndexByte`) and simple string slicing (`string[:index]`) instead of `Split` + `Join` to prevent GC bottlenecks.
