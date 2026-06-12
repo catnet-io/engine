@@ -26,12 +26,14 @@ var ouiMap = map[string]string{
 }
 
 // VendorFromMAC returns the vendor name from the MAC address using a built-in OUI map.
+// ⚡ Bolt Optimization: Replaced strings.Split and strings.Join with zero-allocation string slicing
+// to prevent GC bottlenecks in high-frequency loops.
 func VendorFromMAC(mac string) string {
 	mac = strings.ToUpper(strings.TrimSpace(mac))
 	mac = strings.ReplaceAll(mac, "-", ":")
-	parts := strings.Split(mac, ":")
-	if len(parts) >= 3 {
-		prefix := strings.Join(parts[:3], ":")
+
+	if len(mac) >= 8 && mac[2] == ':' && mac[5] == ':' {
+		prefix := mac[:8]
 		if vendor, ok := ouiMap[prefix]; ok {
 			return vendor
 		}

@@ -31,3 +31,7 @@
 ## 2026-06-09 - Avoid string allocations in tight loops
 **Learning:** Using string manipulation functions like `strings.Split` and `strings.Join` inside O(n) loops (e.g., building graphs from large reports) causes massive and unnecessary allocation overhead (10-20 memory allocations per host due to slice/string buffers).
 **Action:** When extracting a specific part of a string (like a subnet from an IP address), prefer zero-allocation byte indexing functions (`strings.LastIndexByte`) and simple string slicing (`string[:index]`) instead of `Split` + `Join` to prevent GC bottlenecks.
+
+## 2024-06-10 - O(n) String Slicing Over Allocation
+**Learning:** Using `strings.Split` and `strings.Join` for simple string formatting checks (like checking if an OUI matches by splitting and re-joining MAC parts) inside tight loops creates excessive memory allocations and GC pressure.
+**Action:** When verifying simple structure formats or extracting fixed-width prefixes from strings (e.g. MAC address OUI prefixes), prefer zero-allocation byte indexing or manual character checking (`mac[2] == ':' && mac[5] == ':'`) over `strings.Split` and `strings.Join`.
