@@ -1,8 +1,6 @@
 package topology
 
 import (
-	"strings"
-
 	"github.com/mendsec/catnet-core/pkg/results"
 )
 
@@ -74,9 +72,21 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 		}
 
 		// Find /24 subnet
-		parts := strings.Split(dev.IP, ".")
-		if len(parts) == 4 {
-			subnet := strings.Join(parts[:3], ".")
+		// ⚡ Bolt Optimization: Use zero-allocation counting and slicing
+		// Avoids massive allocation overhead and ensures exactly 3 dots (valid IPv4)
+		dots := 0
+		thirdDotIdx := -1
+		for i := 0; i < len(dev.IP); i++ {
+			if dev.IP[i] == '.' {
+				dots++
+				if dots == 3 {
+					thirdDotIdx = i
+				}
+			}
+		}
+
+		if dots == 3 && thirdDotIdx != -1 {
+			subnet := dev.IP[:thirdDotIdx]
 			if subnetMap[subnet] == nil {
 				subnetMap[subnet] = make(map[int][]string)
 			}
