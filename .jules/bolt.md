@@ -31,3 +31,6 @@
 ## 2026-06-09 - Avoid string allocations in tight loops
 **Learning:** Using string manipulation functions like `strings.Split` and `strings.Join` inside O(n) loops (e.g., building graphs from large reports) causes massive and unnecessary allocation overhead (10-20 memory allocations per host due to slice/string buffers).
 **Action:** When extracting a specific part of a string (like a subnet from an IP address), prefer zero-allocation byte indexing functions (`strings.LastIndexByte`) and simple string slicing (`string[:index]`) instead of `Split` + `Join` to prevent GC bottlenecks.
+## 2026-06-10 - [Zero-allocation MAC prefix extraction]
+**Learning:** Extracting MAC prefixes using string manipulation functions like `strings.Split`, `strings.Join`, `strings.ToUpper`, and `strings.ReplaceAll` introduces multiple allocations (around 3 allocs per call). This can create significant garbage collection overhead when parsing massive logs or network tables.
+**Action:** When extracting or sanitizing small fixed-length substrings (like an OUI or IP segment), prefer manually iterating over bytes into a fixed-size array (`[8]byte`). For map lookups, leverage the compiler optimization where `map[string(byteSlice)]` avoids allocating a new string.
