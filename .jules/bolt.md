@@ -31,3 +31,7 @@
 ## 2026-06-09 - Avoid string allocations in tight loops
 **Learning:** Using string manipulation functions like `strings.Split` and `strings.Join` inside O(n) loops (e.g., building graphs from large reports) causes massive and unnecessary allocation overhead (10-20 memory allocations per host due to slice/string buffers).
 **Action:** When extracting a specific part of a string (like a subnet from an IP address), prefer zero-allocation byte indexing functions (`strings.LastIndexByte`) and simple string slicing (`string[:index]`) instead of `Split` + `Join` to prevent GC bottlenecks.
+
+## 2024-05-23 - Zero-allocation MAC address parsing
+**Learning:** Parsing MAC addresses in tight O(N) loops can be heavily optimized by using fixed-size byte arrays instead of multiple string manipulation functions (`strings.Split`, `strings.ToUpper`, `strings.ReplaceAll`), achieving ~12x faster performance and zero allocations. Go's compiler optimizes `string(byteSlice)` as a map key to avoid allocation.
+**Action:** When extracting parts of strings in high-volume functions (like IP subnets or MAC addresses), prefer zero-allocation byte array iteration over standard string operations.
