@@ -26,13 +26,34 @@ var ouiMap = map[string]string{
 }
 
 // VendorFromMAC returns the vendor name from the MAC address using a built-in OUI map.
+// ⚡ Bolt Optimization: Use zero-allocation parsing with a fixed byte array to extract the OUI.
+// Avoids 4 allocations per call (ToUpper, ReplaceAll, Split, Join) in tight loops.
 func VendorFromMAC(mac string) string {
-	mac = strings.ToUpper(strings.TrimSpace(mac))
-	mac = strings.ReplaceAll(mac, "-", ":")
-	parts := strings.Split(mac, ":")
-	if len(parts) >= 3 {
-		prefix := strings.Join(parts[:3], ":")
-		if vendor, ok := ouiMap[prefix]; ok {
+	mac = strings.TrimSpace(mac)
+	if len(mac) < 8 {
+		return ""
+	}
+
+	var prefix [8]byte
+	j := 0
+	for i := 0; i < len(mac) && j < 8; i++ {
+		c := mac[i]
+		if c == '-' || c == ':' {
+			prefix[j] = ':'
+			j++
+		} else {
+			// Fast path upper-case manually
+			if c >= 'a' && c <= 'z' {
+				c -= 32
+			}
+			prefix[j] = c
+			j++
+		}
+	}
+
+	if j == 8 {
+		// Go compiler optimizes string(byteSlice) as map key without allocation
+		if vendor, ok := ouiMap[string(prefix[:])]; ok {
 			return vendor
 		}
 	}
