@@ -1,9 +1,5 @@
 package fingerprint
 
-import (
-	"strings"
-)
-
 var ouiMap = map[string]string{
 	"B8:27:EB": "Raspberry Pi",
 	"DC:A6:32": "Raspberry Pi",
@@ -27,14 +23,38 @@ var ouiMap = map[string]string{
 
 // VendorFromMAC returns the vendor name from the MAC address using a built-in OUI map.
 func VendorFromMAC(mac string) string {
-	mac = strings.ToUpper(strings.TrimSpace(mac))
-	mac = strings.ReplaceAll(mac, "-", ":")
-	parts := strings.Split(mac, ":")
-	if len(parts) >= 3 {
-		prefix := strings.Join(parts[:3], ":")
-		if vendor, ok := ouiMap[prefix]; ok {
-			return vendor
+	// ⚡ Bolt Optimization: Use zero-allocation byte extraction and manual iteration.
+	// Bypasses massive memory overhead from strings.ToUpper, TrimSpace, ReplaceAll, Split, and Join.
+
+	// Skip leading whitespace
+	i := 0
+	for i < len(mac) && (mac[i] == ' ' || mac[i] == '\t' || mac[i] == '\r' || mac[i] == '\n') {
+		i++
+	}
+
+	// We only need the first 8 characters for the OUI (e.g., "B8:27:EB")
+	if len(mac)-i < 8 {
+		return ""
+	}
+
+	var buf [8]byte
+	for j := 0; j < 8; j++ {
+		c := mac[i+j]
+		if c >= 'a' && c <= 'z' {
+			c -= 32 // to upper
+		} else if c == '-' {
+			c = ':' // normalize separator
 		}
+		buf[j] = c
+	}
+
+	// Verify separators to ensure valid MAC format parsing
+	if buf[2] != ':' || buf[5] != ':' {
+		return ""
+	}
+
+	if vendor, ok := ouiMap[string(buf[:])]; ok {
+		return vendor
 	}
 	return ""
 }

@@ -31,3 +31,6 @@
 ## 2026-06-09 - Avoid string allocations in tight loops
 **Learning:** Using string manipulation functions like `strings.Split` and `strings.Join` inside O(n) loops (e.g., building graphs from large reports) causes massive and unnecessary allocation overhead (10-20 memory allocations per host due to slice/string buffers).
 **Action:** When extracting a specific part of a string (like a subnet from an IP address), prefer zero-allocation byte indexing functions (`strings.LastIndexByte`) and simple string slicing (`string[:index]`) instead of `Split` + `Join` to prevent GC bottlenecks.
+## 2024-05-15 - Zero-Allocation Map Lookup with Byte Slices
+**Learning:** In Go, you can avoid heap allocations when querying a map with a string key that needs to be generated dynamically from a byte array (e.g., extracting an OUI from a MAC string). Using `string(buf[:])` directly inside the map index lookup (`ouiMap[string(buf[:])]`) is explicitly optimized by the Go compiler to bypass the heap allocation of the string.
+**Action:** When extracting short strings for map lookups in hot paths, prefer using fixed-size byte buffers (like `[8]byte`) and doing manual iteration over `strings.Split` and `strings.ToUpper`, which generate significant GC pressure.
