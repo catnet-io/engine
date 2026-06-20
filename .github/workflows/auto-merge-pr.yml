@@ -94,9 +94,16 @@ jobs:
           export GIT_COMMITTER_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
 
           # ── Use filter-branch to re-sign every commit (preserving merge structure) ──
-          # commit-filter replaces the default commit creation; -S signs with GPG.
+          # --env-filter rewrites author/committer to github-actions[bot]
+          # --commit-filter signs each commit with GPG via -S
           FILTER_BRANCH_SQUELCH_WARNING=1 \
           git filter-branch --force \
+            --env-filter '
+              export GIT_AUTHOR_NAME="github-actions[bot]"
+              export GIT_AUTHOR_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
+              export GIT_COMMITTER_NAME="github-actions[bot]"
+              export GIT_COMMITTER_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
+            ' \
             --commit-filter '
               git commit-tree -S "$@"
             ' \
