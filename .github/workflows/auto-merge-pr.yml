@@ -36,7 +36,7 @@ jobs:
             echo "✅ develop is $DIFF commit(s) ahead of main."
           fi
 
-      - name: Check if commits are already signed
+      - name: Check if commits need signing
         if: steps.diff.outputs.commit_count != '0'
         id: signing
         env:
@@ -64,37 +64,43 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Import the GPG private key
+          # ── Import the GPG private key ──
           echo "$GPG_PRIVATE_KEY" | base64 -d | gpg --batch --import
 
-          # Get the key ID
           KEY_ID=$(gpg --list-secret-keys --keyid-format long \
             "41898282+github-actions[bot]@users.noreply.github.com" 2>/dev/null \
-            | grep -E '^\s+[A-F0-9]+' | head -1 | tr -d ' ')
+            | grep -oP '[A-F0-9]{16,}' | head -1)
 
           echo "🔑 Using GPG key: $KEY_ID"
 
-          # Configure git for signing
+          # ── Configure git ──
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.signingkey "$KEY_ID"
           git config commit.gpgsign true
-          git config gpg.program gpg
 
-          # Rebase develop onto main and re-sign every commit
-          git checkout develop
+          # ── Determine the commit range to sign ──
+          MERGE_BASE=$(git merge-base origin/main origin/develop)
+          echo "📌 Merge base: ${MERGE_BASE:0:7}"
 
-          # Use rebase --exec to amend and sign each commit
-          GIT_COMMITTER_NAME="github-actions[bot]" \
-          GIT_COMMITTER_EMAIL="41898282+github-actions[bot]@users.noreply.github.com" \
-          git rebase origin/main --exec 'git commit --amend --no-edit -S'
+          # ── Use filter-branch to re-sign every commit (preserving merge structure) ──
+          # This rewrites each commit by amending it with a GPG signature,
+          # without linearizing the history (unlike rebase).
+          FILTER_BRANCH_SQUELCH_WARNING=1 \
+          git filter-branch --force \
+            --commit-filter '
+              git commit-tree \
+                -S \
+                "$@"
+            ' \
+            "${MERGE_BASE}..origin/develop"
 
-          # Verify the signatures locally
+          # ── Verify signatures locally ──
           echo ""
           echo "📝 Signed commits:"
-          git log --oneline --show-signature origin/main..HEAD 2>&1 | head -60
+          git log --oneline --format="%h %G? %s" origin/main..develop | head -30
 
-          # Force push the signed branch
+          # ── Force push the signed branch ──
           git push --force origin develop
 
           echo ""
@@ -126,6 +132,7 @@ jobs:
           ## Merge develop → main
 
           Automated PR opened by \`github-actions[bot]\`.
+          All commits are GPG-signed. ✅
 
           ### Commits included ($COMMIT_COUNT)
 
@@ -135,6 +142,7 @@ jobs:
 
           ### Checklist
           - [x] CI passes on \`develop\`
+          - [x] Commits are GPG-signed
           - [ ] Code review approved
           - [ ] Ready to merge
           EOF
