@@ -1,9 +1,5 @@
 package fingerprint
 
-import (
-	"strings"
-)
-
 var ouiMap = map[string]string{
 	"B8:27:EB": "Raspberry Pi",
 	"DC:A6:32": "Raspberry Pi",
@@ -27,14 +23,40 @@ var ouiMap = map[string]string{
 
 // VendorFromMAC returns the vendor name from the MAC address using a built-in OUI map.
 func VendorFromMAC(mac string) string {
-	mac = strings.ToUpper(strings.TrimSpace(mac))
-	mac = strings.ReplaceAll(mac, "-", ":")
-	parts := strings.Split(mac, ":")
-	if len(parts) >= 3 {
-		prefix := strings.Join(parts[:3], ":")
-		if vendor, ok := ouiMap[prefix]; ok {
-			return vendor
+	// Skip leading whitespace without allocating.
+	i := 0
+	for i < len(mac) {
+		switch mac[i] {
+		case ' ', '\t', '\r', '\n':
+			i++
+		default:
+			goto parse
 		}
+	}
+	return ""
+
+parse:
+	if len(mac)-i < 8 {
+		return ""
+	}
+
+	var prefix [8]byte
+	for j := 0; j < 8; j++ {
+		c := mac[i+j]
+		if c >= 'a' && c <= 'z' {
+			c -= 'a' - 'A'
+		} else if c == '-' {
+			c = ':'
+		}
+		prefix[j] = c
+	}
+
+	if prefix[2] != ':' || prefix[5] != ':' {
+		return ""
+	}
+
+	if vendor, ok := ouiMap[string(prefix[:])]; ok {
+		return vendor
 	}
 	return ""
 }
