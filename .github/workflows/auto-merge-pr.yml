@@ -78,27 +78,37 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.signingkey "$KEY_ID"
           git config commit.gpgsign true
+          git config gpg.program gpg
+
+          # ── Checkout the local develop branch ──
+          git checkout develop
+          git reset --hard origin/develop
 
           # ── Determine the commit range to sign ──
-          MERGE_BASE=$(git merge-base origin/main origin/develop)
+          MERGE_BASE=$(git merge-base origin/main develop)
           echo "📌 Merge base: ${MERGE_BASE:0:7}"
+          echo "📌 develop HEAD: $(git rev-parse develop | head -c 7)"
+
+          # ── Set committer identity for filter-branch ──
+          export GIT_COMMITTER_NAME="github-actions[bot]"
+          export GIT_COMMITTER_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
 
           # ── Use filter-branch to re-sign every commit (preserving merge structure) ──
-          # This rewrites each commit by amending it with a GPG signature,
-          # without linearizing the history (unlike rebase).
+          # commit-filter replaces the default commit creation; -S signs with GPG.
           FILTER_BRANCH_SQUELCH_WARNING=1 \
           git filter-branch --force \
             --commit-filter '
-              git commit-tree \
-                -S \
-                "$@"
+              git commit-tree -S "$@"
             ' \
-            "${MERGE_BASE}..origin/develop"
+            "${MERGE_BASE}..develop"
+
+          echo ""
+          echo "📝 Develop HEAD after signing: $(git rev-parse develop | head -c 7)"
 
           # ── Verify signatures locally ──
           echo ""
-          echo "📝 Signed commits:"
-          git log --oneline --format="%h %G? %s" origin/main..develop | head -30
+          echo "📝 Signed commits (G=good, N=none):"
+          git log --format="%h %G? %s" "${MERGE_BASE}..develop" | head -30
 
           # ── Force push the signed branch ──
           git push --force origin develop
