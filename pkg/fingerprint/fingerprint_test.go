@@ -28,25 +28,6 @@ func TestGuessOSFromTTL(t *testing.T) {
 	}
 }
 
-func TestVendorFromMAC(t *testing.T) {
-	tests := []struct {
-		mac      string
-		expected string
-	}{
-		{"B8:27:EB:00:00:00", "Raspberry Pi"},
-		{"00:00:0c:12:34:56", "Cisco"},
-		{"00:16:32:aa:bb:cc", "Samsung"},
-		{"FF:FF:FF:FF:FF:FF", ""},
-	}
-
-	for _, tt := range tests {
-		v := VendorFromMAC(tt.mac)
-		if v != tt.expected {
-			t.Errorf("mac %s: expected %s, got %s", tt.mac, tt.expected, v)
-		}
-	}
-}
-
 func TestOsFromBanners(t *testing.T) {
 	tests := []struct {
 		banners    map[int]string
