@@ -1,0 +1,82 @@
+name: Auto Merge PR (develop → main)
+
+# Triggers:
+#   - Every push to develop (new commits land)
+#   - Manual dispatch from the Actions tab
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for diff between develop and main
+        id: diff
+        run: |
+          DIFF=$(git rev-list --count origin/main..origin/develop 2>/dev/null || echo "0")
+          echo "commit_count=$DIFF" >> "$GITHUB_OUTPUT"
+          if [ "$DIFF" -eq 0 ]; then
+            echo "⚠️  develop is up-to-date with main — nothing to do."
+          else
+            echo "✅ develop is $DIFF commit(s) ahead of main."
+          fi
+
+      - name: Create or update Pull Request
+        if: steps.diff.outputs.commit_count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if an open PR from develop → main already exists
+          EXISTING_PR=$(gh pr list \
+            --base main \
+            --head develop \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "ℹ️  PR #$EXISTING_PR already exists — skipping creation."
+            exit 0
+          fi
+
+          # Build a commit summary for the PR body
+          COMMITS=$(git log --oneline origin/main..origin/develop)
+          COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
+
+          BODY=$(cat <<EOF
+          ## Merge develop → main
+
+          Automated PR opened by \`github-actions[bot]\`.
+
+          ### Commits included ($COMMIT_COUNT)
+
+          \`\`\`
+          $COMMITS
+          \`\`\`
+
+          ### Checklist
+          - [x] CI passes on \`develop\`
+          - [ ] Code review approved
+          - [ ] Ready to merge
+          EOF
+          )
+
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "chore: merge develop → main" \
+            --body "$BODY"
+
+          echo "✅ Pull Request created successfully."
