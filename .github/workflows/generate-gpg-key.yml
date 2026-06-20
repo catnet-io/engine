@@ -1,0 +1,64 @@
+name: Generate Bot GPG Key (one-time setup)
+
+# Manual trigger only
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GPG key pair
+        id: gpg
+        run: |
+          set -euo pipefail
+
+          # Generate a GPG key for github-actions[bot]
+          cat > key-params <<EOF
+          %no-protection
+          Key-Type: RSA
+          Key-Length: 4096
+          Key-Usage: sign
+          Name-Real: github-actions[bot]
+          Name-Email: 41898282+github-actions[bot]@users.noreply.github.com
+          Expire-Date: 0
+          EOF
+
+          gpg --batch --gen-key key-params
+          rm key-params
+
+          # Get the key fingerprint
+          KEY_FPR=$(gpg --list-secret-keys --with-colons \
+            "41898282+github-actions[bot]@users.noreply.github.com" \
+            | grep '^fpr' | head -1 | cut -d: -f10)
+
+          echo "🔑 Key fingerprint: $KEY_FPR"
+
+          # Export the private key (base64-encoded for safe storage)
+          PRIVATE_KEY_B64=$(gpg --batch --export-secret-keys "$KEY_FPR" | base64 -w 0)
+
+          # Export the public key (armored, for adding to GitHub account)
+          PUBLIC_KEY=$(gpg --batch --armor --export "$KEY_FPR")
+
+          echo ""
+          echo "=============================================="
+          echo "  BOT_GPG_PRIVATE_KEY (add as repo secret)"
+          echo "=============================================="
+          echo "$PRIVATE_KEY_B64"
+          echo ""
+          echo "=============================================="
+          echo "  GPG PUBLIC KEY (add to GitHub account)"
+          echo "=============================================="
+          echo "$PUBLIC_KEY"
+          echo ""
+          echo "=============================================="
+          echo ""
+          echo "📋 Steps:"
+          echo "1. Copy the BOT_GPG_PRIVATE_KEY value above"
+          echo "2. Go to repo Settings → Secrets → Actions"
+          echo "3. Create secret: BOT_GPG_PRIVATE_KEY = <the base64 string>"
+          echo "4. (Optional) Add the PUBLIC KEY to a GitHub account"
+          echo "   for 'Verified' badges on commits."
