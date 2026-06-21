@@ -30,3 +30,20 @@ jobs:
       - name: Test
         run: go test -race -v ./...
 
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.x"
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run fuzz tests
+        run: go test -fuzz=FuzzParseRange -fuzztime=10s ./pkg/targets
+
