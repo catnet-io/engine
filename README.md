@@ -87,6 +87,19 @@ func main() {
 Current version: v0.2.0
 See [CHANGELOG.md](CHANGELOG.md) for details.
 
+## Security and CI
+
+This repository follows DevSecOps practices by integrating quality and security checks into the development workflow:
+
+- GitHub Actions CI on `main` and `develop`
+- `go vet`, `go test -race`, and dependency verification
+- `go test -fuzz=FuzzParseRange` fuzzing of target parsing
+- linting via `golangci-lint`
+- vulnerability scanning with `govulncheck`
+- dependency updates via Dependabot
+- security reporting guidance in `SECURITY.md`
+- full DevSecOps guidance in [docs/devsecops.md](docs/devsecops.md)
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
