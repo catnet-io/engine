@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-21
+
+### Added
+- **Topology Graph Support** (`pkg/topology/`): Complete network topology graph builder with gateway identification, device clustering by subnet, and graph export capabilities.
+- **OS/Device Fingerprinting Enhancements**:
+  - OUI (Organizationally Unique Identifier) module with zero-allocation lookup for MAC vendor identification.
+  - TTL (Time To Live) fingerprinting module for OS detection.
+  - Banner fingerprinting support for service identification.
+  - Comprehensive test suites and benchmarks for all fingerprinting modules.
+- **DevSecOps Documentation**: Added `docs/devsecops.md` with security practices, vulnerability scanning procedures, and fuzzing guidelines.
+- **Enhanced CI/CD Infrastructure**:
+  - Golangci-lint configuration (`.golangci.yml`) with strict linting rules.
+  - Dependabot automation for dependency updates (`dependabot.yml`).
+  - Fuzz testing CI workflow for automatic fuzzing on pull requests.
+  - Govulncheck PR workflow for automated vulnerability scanning.
+  - GPG-signed commit workflow for supply chain security.
+  - Automated develop→main merge workflow with GPG signing.
+
+### Changed
+- **Performance Optimizations (Zero-Allocation Patterns)**:
+  - ⚡ ARP table parsing in MAC discovery now uses zero-allocation parsing.
+  - ⚡ VendorFromMAC lookup optimized for minimal memory allocations with dedicated benchmarks.
+  - ⚡ Subnet extraction (`/24`) in topology builder uses zero-allocation string slicing.
+  - ⚡ Topology graph edge keys replaced with zero-allocation struct keys, eliminating string concatenation overhead.
+- **Port Scanner Improvements**: Enhanced port scanning logic with better concurrency handling and timeout calculations.
+- **CI Workflow Updates**: Refactored CI workflows for better separation of concerns and improved maintainability.
+- **Dependency Updates**:
+  - `actions/checkout`: Bumped from v4 to v7 for enhanced features and security fixes.
+  - `actions/setup-go`: Bumped from v5 to v6 for improved Go version handling.
+
+### Fixed
+- **POSIX `osPing` Enhancement**: Improved timeout parameter handling to properly convert milliseconds to whole seconds for Linux (`-W` flag) and milliseconds for macOS.
+- **Golangci-lint Version Mismatch**: Fixed CI compilation issue by compiling golangci-lint from source when necessary.
+
+### Security
+- All commits are now GPG-signed via automated workflow for supply chain integrity.
+- Added regular vulnerability scanning with `govulncheck`.
+- Enhanced CI linting with golangci-lint and security-focused configuration.
+
+## [0.1.2] - 2026-06-06
+
+### Added
+- Topology graph builder foundation.
+- Initial fingerprinting module structure.
+
+### Changed
+- Port scanner refactoring (PR #40 integration).
+
 ## [0.1.1] - 2026-06-06
 
 ### Added
@@ -38,6 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: `go vet` + `go test -race` no GitHub Actions.
 - CI: `govulncheck` semanal.
 
-[Unreleased]: https://github.com/mendsec/catnet-core/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/mendsec/catnet-core/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mendsec/catnet-core/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.2
 [0.1.1]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.0
