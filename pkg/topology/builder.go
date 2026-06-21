@@ -97,7 +97,10 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 	}
 
 	// host -> host edges
-	addedHostEdges := make(map[string]bool)
+	type edgeKey struct {
+		src, dst string
+	}
+	addedHostEdges := make(map[edgeKey]struct{})
 	for _, portsMap := range subnetMap {
 		for _, ipList := range portsMap {
 			if len(ipList) > 1 {
@@ -112,9 +115,11 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 						if src > dst {
 							src, dst = dst, src
 						}
-						key := src + "-" + dst
-						if !addedHostEdges[key] {
-							addedHostEdges[key] = true
+						// ⚡ Bolt Optimization: Use zero-allocation struct key instead of string concatenation.
+						// This prevents massive memory allocation and GC overhead in dense O(N^2) graphs.
+						key := edgeKey{src, dst}
+						if _, exists := addedHostEdges[key]; !exists {
+							addedHostEdges[key] = struct{}{}
 							graph.Edges = append(graph.Edges, TopologyEdge{
 								Source: src,
 								Target: dst,
