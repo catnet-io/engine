@@ -39,23 +39,9 @@ jobs:
       - name: Check if commits need signing
         if: steps.diff.outputs.commit_count != '0'
         id: signing
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NEEDS_SIGNING=false
-          for SHA in $(git rev-list origin/main..origin/develop); do
-            VERIFIED=$(gh api "repos/${{ github.repository }}/git/commits/${SHA}" \
-              --jq '.verification.verified' 2>/dev/null || echo "false")
-            if [ "$VERIFIED" != "true" ]; then
-              NEEDS_SIGNING=true
-              echo "⚠️  Commit ${SHA:0:7} is NOT signed."
-              break
-            fi
-          done
+          NEEDS_SIGNING=true
           echo "needs_signing=$NEEDS_SIGNING" >> "$GITHUB_OUTPUT"
-          if [ "$NEEDS_SIGNING" = "false" ]; then
-            echo "✅ All commits are already signed — skipping."
-          fi
 
       - name: Sign commits with SSH
         if: steps.signing.outputs.needs_signing == 'true'
