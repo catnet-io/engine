@@ -5,9 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Fingerprint**: `BannerGrabConfig.AggressiveSMB` allows opt-in SMB negotiate probe (off by default).
+- **Fingerprint**: `FingerprintWithConfig` accepts `BannerGrabConfig` for fine-grained control.
+- **Fingerprint**: `BannerConcurrency` constant (`5`) limits simultaneous banner grab connections.
+- **Fingerprint + Discovery**: Fuzz targets for `VendorFromMAC`, `sanitizeBanner`, `parseProcNetArp`.
+- **Engine**: `TestScanReportCompleteness` ensures `len(Devices) == Total` always.
+- **Engine**: `TestNoGoroutineLeakOnCancel` verifies no goroutine leak after cancellation.
+- **Topology**: `TestBuildGraph_EdgeLimit` verifies `maxEdgesPerSubnet = 200` is respected.
+- **Docs**: `pkg/fingerprint`, `pkg/topology`, `pkg/coreerr` added to README packages table.
+- **Docs**: `docs/examples/integration_examples.md` section 4 with topology example.
+- **Docs**: `api-stability.md` lists `pkg/coreerr` as stable.
+
+### Changed
+- **BREAKING CHANGE**: `GrabBanners` signature changed — now accepts `BannerGrabConfig` as last parameter.
+- **BREAKING CHANGE**: `Fingerprint` delegates to `FingerprintWithConfig` with default config.
+- **Engine `StartScan`**: Unified alive/dead host paths into a single goroutine per IP, eliminating the nested goroutine for alive hosts. This fixes a race condition in `report.Devices` ordering and ensures `EventLifecycleCancel` is always the last event emitted. Port scan + fingerprint now run sequentially in the same worker goroutine.
+- **Export CSV/XML**: Added `OS`, `DeviceType`, `Vendor` columns/fields. `OSFamily` omitted by design (redundant with `OS`).
+- **Config**: `ScanConfig` godoc expanded with default values and sanitize limits for all fields.
+
+### Fixed
+- **discovery/parseProcNetArp**: Guard against infinite loop when `eol == 0` (empty line). `dataToSearch` now advances by at least 1 byte.
+- **fingerprint/doc.go**: Package comment moved before `package` line so `go doc` renders it correctly.
+- **README**: Removed `pkg/scanner` (no longer exists). Added `pkg/fingerprint`, `pkg/topology`, `pkg/coreerr`.
+
+### Security
+- **SMB probe now opt-in**: `BannerGrabConfig.AggressiveSMB=false` by default. Set to `true` only if permitted by engagement rules.
+
 ## [0.2.0] - 2026-06-21
 
 ### Added
+- `FingerprintProvider` interface injetável em `ScanConfig`.
+- `ScanPorts` refatorada para retornar `<-chan int` (canal desacopla port scan do worker).
+- `parseProcNetArp` extraída como função testável.
+- `sanitizeBanner` para output seguro de banners.
+- `ExportCSV` otimizada com `strconv.AppendInt` + reuse de slice.
+- `maxEdgesPerSubnet = 200` em topology para limitar explosão O(N²).
 - **Topology Graph Support** (`pkg/topology/`): Complete network topology graph builder with gateway identification, device clustering by subnet, and graph export capabilities.
 - **OS/Device Fingerprinting Enhancements**:
   - OUI (Organizationally Unique Identifier) module with zero-allocation lookup for MAC vendor identification.
@@ -24,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated develop→main merge workflow with GPG signing.
 
 ### Changed
+- **BREAKING CHANGE**: `ScanPorts` não retorna mais `[]int` — retorna `<-chan int`. Consumidores de `pkg/ports` diretamente (fora do engine) precisam ler do canal.
 - **Performance Optimizations (Zero-Allocation Patterns)**:
   - ⚡ ARP table parsing in MAC discovery now uses zero-allocation parsing.
   - ⚡ VendorFromMAC lookup optimized for minimal memory allocations with dedicated benchmarks.

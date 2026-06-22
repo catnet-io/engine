@@ -6,10 +6,15 @@ import (
 
 // Fingerprint orchestrates the OS, device type, and vendor detection process.
 func Fingerprint(ctx context.Context, ip, mac string, ttl int, openPorts []int, timeoutMs int) FingerprintResult {
+	return FingerprintWithConfig(ctx, ip, mac, ttl, openPorts, timeoutMs, BannerGrabConfig{})
+}
+
+// FingerprintWithConfig is like Fingerprint but accepts a BannerGrabConfig.
+func FingerprintWithConfig(ctx context.Context, ip, mac string, ttl int, openPorts []int, timeoutMs int, bc BannerGrabConfig) FingerprintResult {
 	// 1. Gather inputs
 	ttlResult := GuessOSFromTTL(ttl)
 
-	banners := GrabBanners(ctx, ip, openPorts, timeoutMs)
+	banners := GrabBanners(ctx, ip, openPorts, timeoutMs, bc)
 	bannerResult := OsFromBanners(banners)
 
 	vendor := VendorFromMAC(mac)

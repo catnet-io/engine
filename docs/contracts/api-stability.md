@@ -12,6 +12,7 @@ The following packages form the core stable surface of the ecosystem. Breaking c
 - **`pkg/discovery`**: Discovery tools for Liveness, DNS, and MAC resolution.
 - **`pkg/ports`**: Port scanning utilities.
 - **`pkg/exporter`**: Exporting capabilities (JSON, CSV, XML). JSON is the canonical format.
+- **`pkg/coreerr`**: Structured error taxonomy. Sentinel errors (`ErrTimeout`, `ErrCancelled`, `ErrInvalidInput`, `ErrPermission`, `ErrExport`, `ErrPartial`) are stable and safe for use with `errors.Is`. New sentinel values may be added without breaking existing checks.
 
 ## Experimental / Internal Packages
 
@@ -22,7 +23,7 @@ Any package under `internal/` is strictly internal and offers **zero stability g
 
 ## Deprecated Packages
 
-- **`pkg/scanner`**: **DEPRECATED**. This package previously housed all scanning logic. It is now maintained solely as a temporary compatibility wrapper to ease the migration to the new package structure. It will be removed in a future release. Downstream consumers should migrate to `pkg/engine`, `pkg/discovery`, `pkg/ports`, `pkg/targets`, and `pkg/results`.
+- **`pkg/scanner`**: **REMOVED** since v0.2.0. The package no longer exists in the codebase. All consumers should already be migrated to `pkg/engine`, `pkg/discovery`, `pkg/ports`, `pkg/targets`, and `pkg/results`.
 
 ## Execution Model: Context
 

@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
@@ -148,6 +149,22 @@ func TestParallelScans(t *testing.T) {
 	wg.Wait()
 }
 
+func TestScanReportCompleteness(t *testing.T) {
+	ips := []string{"192.0.2.1", "192.0.2.2", "192.0.2.3"}
+	cfg := DefaultConfig()
+	cfg.PingTimeoutMs = 10
+	cfg.MaxThreads = 2
+
+	report, err := StartScan(context.Background(), ips, cfg, nil)
+	if err != nil {
+		t.Fatalf("StartScan failed: %v", err)
+	}
+
+	if len(report.Devices) != report.Total {
+		t.Errorf("len(Devices)=%d != Total=%d", len(report.Devices), report.Total)
+	}
+}
+
 func BenchmarkStartScan(b *testing.B) {
 	ips := make([]string, 100)
 	for i := 0; i < 100; i++ {
@@ -162,6 +179,47 @@ func BenchmarkStartScan(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = StartScan(context.Background(), ips, cfg, nil)
 	}
+}
+
+func TestNoGoroutineLeakOnCancel(t *testing.T) {
+	ips := make([]string, 50)
+	for i := range ips {
+		ips[i] = "192.0.2." + itoa(i+1)
+	}
+	cfg := DefaultConfig()
+	cfg.PingTimeoutMs = 500
+	cfg.MaxThreads = 10
+	cfg.DefaultPorts = []int{}
+
+	before := runtime.NumGoroutine()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		cancel()
+	}()
+	_, _ = StartScan(ctx, ips, cfg, nil)
+
+	time.Sleep(200 * time.Millisecond)
+	after := runtime.NumGoroutine()
+
+	if after > before+2 {
+		t.Errorf("Goroutine leak: before=%d after=%d", before, after)
+	}
+}
+
+func itoa(i int) string {
+	if i == 0 {
+		return "0"
+	}
+	var buf [10]byte
+	pos := len(buf)
+	for i > 0 {
+		pos--
+		buf[pos] = byte('0' + i%10)
+		i /= 10
+	}
+	return string(buf[pos:])
 }
 
 func TestStartScanDefensiveTimeout(t *testing.T) {

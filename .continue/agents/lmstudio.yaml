@@ -1,0 +1,32 @@
+name: Fabio LM Studio
+version: 1.0.0
+schema: v1
+
+models:
+  - name: LM Studio Auto
+    provider: lmstudio
+    model: AUTODETECT
+    apiBase: http://localhost:1234/v1
+
+  - name: Qwen 2.5 Coder 7B
+    provider: lmstudio
+    model: qwen2.5-coder-7b-instruct
+    apiBase: http://localhost:1234/v1
+
+  - name: Qwen 2.5 Coder 14B
+    provider: lmstudio
+    model: qwen2.5-coder-14b-instruct
+    apiBase: http://localhost:1234/v1
+
+  - name: Qwen 3.6 27B
+    provider: lmstudio
+    model: qwen3.6-27b
+    apiBase: http://localhost:1234/v1
+
+context:
+  - provider: code
+  - provider: docs
+  - provider: diff
+  - provider: terminal
+  - provider: problems
+  - provider: folder

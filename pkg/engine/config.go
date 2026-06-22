@@ -4,17 +4,26 @@ import "context"
 
 // ScanConfig define os parâmetros de uma varredura.
 type ScanConfig struct {
-	DefaultPorts  []int `json:"defaultPorts"`
-	PortTimeoutMs int   `json:"portTimeoutMs"`
-	PingTimeoutMs int   `json:"pingTimeoutMs"`
+	// DefaultPorts é a lista de portas TCP escaneadas em cada host vivo.
+	// Padrão: [22 (SSH), 80 (HTTP), 443 (HTTPS), 139 (NetBIOS), 445 (SMB), 3389 (RDP)].
+	DefaultPorts []int `json:"defaultPorts"`
 
-	// MaxThreads define o nível de paralelismo da varredura.
-	// O motor impõe um limite máximo rigoroso de 256 threads para prevenir exaustão
-	// de sockets no host (ulimit issues) e um mínimo de 1.
+	// PortTimeoutMs é o timeout em milissegundos para cada tentativa de conexão TCP.
+	// Padrão: 500ms. Limite: 1–10000ms (Sanitize clampeia valores fora do range).
+	PortTimeoutMs int `json:"portTimeoutMs"`
+
+	// PingTimeoutMs é o timeout em milissegundos para o ping ICMP de liveness.
+	// Padrão: 1000ms. Limite: 1–10000ms.
+	PingTimeoutMs int `json:"pingTimeoutMs"`
+
+	// MaxThreads define o nível de paralelismo da varredura (goroutines simultâneas).
+	// Padrão: 64. Limite máximo absoluto: 256 (imposto pelo engine em StartScan).
+	// Valores acima de 256 ou abaixo de 1 são silenciosamente clampeados para 16.
 	MaxThreads int `json:"maxThreads"`
 
 	// FingerprintProvider permite injetar lógica customizada de fingerprinting.
-	// Se nulo, o motor usará o pacote padrão pkg/fingerprint.
+	// Se nil, o motor usa pkg/fingerprint com heurísticas padrão de TTL, banner e OUI.
+	// Útil para testes (mock) ou extensão de capacidades de detecção.
 	FingerprintProvider FingerprintProvider `json:"-"`
 }
 
@@ -34,10 +43,10 @@ type FingerprintProvider interface {
 // DefaultConfig retorna uma ScanConfig com valores padrão conservadores.
 func DefaultConfig() ScanConfig {
 	return ScanConfig{
-		DefaultPorts:  []int{22, 80, 443, 139, 445, 3389},
-		PortTimeoutMs: 500,
-		PingTimeoutMs: 1000,
-		MaxThreads:    64,
+		DefaultPorts:        []int{22, 80, 443, 139, 445, 3389},
+		PortTimeoutMs:       500,
+		PingTimeoutMs:       1000,
+		MaxThreads:          64,
 		FingerprintProvider: nil, // Usará default em StartScan se nulo
 	}
 }

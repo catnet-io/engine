@@ -83,6 +83,40 @@ func startEngineCommand(ips []string, cfg engine.ScanConfig) tea.Cmd {
 
 ## 3. GUI Consumer (Wails/React - Debouncing)
 
+## 4. Building a Network Topology Graph
+
+After completing a scan, use `pkg/topology` to generate an adjacency graph for visualization.
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/mendsec/catnet-core/pkg/engine"
+	"github.com/mendsec/catnet-core/pkg/topology"
+)
+
+func main() {
+	ips := []string{"192.168.1.1", "192.168.1.10", "192.168.1.11"}
+	cfg := engine.DefaultConfig()
+
+	report, _ := engine.StartScan(context.Background(), ips, cfg, nil)
+
+	graph := topology.BuildGraph(report)
+	fmt.Printf("Nodes: %d, Edges: %d, Gateway: %s\n",
+		len(graph.Nodes), len(graph.Edges), graph.Gateway)
+
+	d3json, _ := topology.ExportD3JSON(graph)
+	os.WriteFile("topology.json", d3json, 0644)
+}
+```
+
+## 3. GUI Consumer (Wails/React - Debouncing)
+
 In GUI wrappers like Wails or Electron, sending thousands of progress updates via RPC per second will freeze the webview. You should debounce the `EventProgress`.
 
 ```go
