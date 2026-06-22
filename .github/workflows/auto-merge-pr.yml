@@ -50,7 +50,7 @@ jobs:
           git checkout -B develop-signed origin/develop
           git filter-branch -f --commit-filter 'git commit-tree -S "$@"' origin/main..HEAD
           echo "Signed $COUNT commit(s) on develop-signed."
-          git push origin HEAD:develop-signed
+          git push origin HEAD:develop-signed --force-with-lease
 
       - name: Close old PR (develop → main)
         env:
