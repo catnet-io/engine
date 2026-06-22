@@ -3,6 +3,7 @@ updates:
   # Mantém as GitHub Actions atualizadas
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
     commit-message:
@@ -11,6 +12,7 @@ updates:
   # Mantém as dependências Go (se existirem) atualizadas
   - package-ecosystem: "gomod"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
     commit-message:
