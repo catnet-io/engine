@@ -48,7 +48,10 @@ jobs:
             exit 0
           fi
           git checkout -B develop-signed origin/develop
-          git filter-branch -f --commit-filter 'git commit-tree -S "$@"' origin/main..HEAD
+          git filter-branch -f \
+            --env-filter 'export GIT_COMMITTER_NAME="mendsec" GIT_COMMITTER_EMAIL="fabiomendesilva@gmail.com"' \
+            --commit-filter 'git commit-tree -S "$@"' \
+            origin/main..HEAD
           echo "Signed $COUNT commit(s) on develop-signed."
           git push origin HEAD:develop-signed --force-with-lease
 
