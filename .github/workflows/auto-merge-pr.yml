@@ -19,12 +19,43 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup SSH signing
+        env:
+          SSH_KEY: ${{ secrets.BOT_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SSH_KEY" ]; then
+            echo "BOT_SSH_PRIVATE_KEY is not set, skipping signing."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
+          git config gpg.format ssh
+          git config user.signingkey ~/.ssh/id_ed25519.pub
+          git config commit.gpgsign true
+          echo "SSH signing configured."
+
+      - name: Sign commits
+        run: |
+          COUNT=$(git rev-list --count origin/main..HEAD 2>/dev/null || echo "0")
+          if [ "$COUNT" -eq "0" ]; then
+            echo "No new commits to sign."
+            exit 0
+          fi
+          git filter-branch -f --commit-filter 'git commit-tree -S "$@"' origin/main..HEAD
+          echo "Signed $COUNT commit(s)."
+
+      - name: Push signed commits
+        run: |
+          git push origin HEAD:develop --force-with-lease
+
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch origin main 2>/dev/null || true
-          git checkout -B develop origin/develop
           gh pr create \
             --base main \
             --head develop \
