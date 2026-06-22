@@ -1,5 +1,7 @@
 package engine
 
+import "context"
+
 // ScanConfig define os parâmetros de uma varredura.
 type ScanConfig struct {
 	DefaultPorts  []int `json:"defaultPorts"`
@@ -10,6 +12,23 @@ type ScanConfig struct {
 	// O motor impõe um limite máximo rigoroso de 256 threads para prevenir exaustão
 	// de sockets no host (ulimit issues) e um mínimo de 1.
 	MaxThreads int `json:"maxThreads"`
+
+	// FingerprintProvider permite injetar lógica customizada de fingerprinting.
+	// Se nulo, o motor usará o pacote padrão pkg/fingerprint.
+	FingerprintProvider FingerprintProvider `json:"-"`
+}
+
+// FingerprintData contém os resultados da detecção.
+type FingerprintData struct {
+	OS         string
+	OSFamily   string
+	DeviceType string
+	Vendor     string
+}
+
+// FingerprintProvider define o contrato para heurísticas de detecção de SO e dispositivos.
+type FingerprintProvider interface {
+	Fingerprint(ctx context.Context, ip, mac string, ttl int, ports []int, timeoutMs int) FingerprintData
 }
 
 // DefaultConfig retorna uma ScanConfig com valores padrão conservadores.
@@ -19,6 +38,7 @@ func DefaultConfig() ScanConfig {
 		PortTimeoutMs: 500,
 		PingTimeoutMs: 1000,
 		MaxThreads:    64,
+		FingerprintProvider: nil, // Usará default em StartScan se nulo
 	}
 }
 

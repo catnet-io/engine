@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -98,39 +99,80 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 					if di.IsAlive && ctx.Err() == nil {
 						di.Hostname = discovery.ReverseDNS(ip)
 						di.MAC = discovery.GetMAC(ip)
-						if ctx.Err() == nil {
-							di.OpenPorts = ports.ScanPorts(ctx, ip, cfg.DefaultPorts, cfg.PortTimeoutMs)
-							fp := fingerprint.Fingerprint(ctx, ip, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
-							di.OS = fp.OS
-							di.OSFamily = fp.OSFamily
-							di.DeviceType = string(fp.DeviceType)
-							di.Vendor = fp.Vendor
+
+						wg.Add(1)
+						go func(di results.DeviceInfo) {
+							defer wg.Done()
+							if ctx.Err() == nil {
+								portChan := ports.ScanPorts(ctx, di.IP, cfg.DefaultPorts, cfg.PortTimeoutMs)
+								for p := range portChan {
+									di.OpenPorts = append(di.OpenPorts, p)
+								}
+
+								// Keep output deterministic since channel receives can be unordered
+								sort.Ints(di.OpenPorts)
+
+								var fp FingerprintData
+								if cfg.FingerprintProvider != nil {
+									fp = cfg.FingerprintProvider.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+								} else {
+									res := fingerprint.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+									fp = FingerprintData{
+										OS:         res.OS,
+										OSFamily:   res.OSFamily,
+										DeviceType: string(res.DeviceType),
+										Vendor:     res.Vendor,
+									}
+								}
+								di.OS = fp.OS
+								di.OSFamily = fp.OSFamily
+								di.DeviceType = fp.DeviceType
+								di.Vendor = fp.Vendor
+							}
+
+							mu.Lock()
+							report.Devices = append(report.Devices, di)
+							if di.IsAlive {
+								report.Alive++
+							}
+							mu.Unlock()
+
+							curr := atomic.AddInt32(&processed, 1)
+							if onEvent != nil {
+								diCopy := di
+								onEvent(ScanEvent{
+									Type:     EventResult,
+									Device:   &diCopy,
+									Progress: float64(curr) / float64(total),
+								})
+								onEvent(ScanEvent{
+									Type:     EventProgress,
+									Device:   nil,
+									Progress: float64(curr) / float64(total),
+								})
+							}
+						}(di)
+					} else {
+						mu.Lock()
+						report.Devices = append(report.Devices, di)
+						mu.Unlock()
+
+						curr := atomic.AddInt32(&processed, 1)
+						if onEvent != nil {
+							diCopy := di
+							onEvent(ScanEvent{
+								Type:     EventResult,
+								Device:   &diCopy,
+								Progress: float64(curr) / float64(total),
+							})
+							onEvent(ScanEvent{
+								Type:     EventProgress,
+								Device:   nil,
+								Progress: float64(curr) / float64(total),
+							})
 						}
 					}
 
-					mu.Lock()
-					report.Devices = append(report.Devices, di)
-					if di.IsAlive {
-						report.Alive++
-					}
-					mu.Unlock()
-
-					curr := atomic.AddInt32(&processed, 1)
-					if onEvent != nil {
-						// Cria cópia explícita para o callback para evitar que consumidores
-						// assíncronos recebam um ponteiro para a variável que pode ser modificada ou escapar.
-						diCopy := di
-						onEvent(ScanEvent{
-							Type:     EventResult,
-							Device:   &diCopy,
-							Progress: float64(curr) / float64(total),
-						})
-						onEvent(ScanEvent{
-							Type:     EventProgress,
-							Device:   nil,
-							Progress: float64(curr) / float64(total),
-						})
-					}
 				}
 			}
 		}()

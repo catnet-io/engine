@@ -35,3 +35,6 @@
 ## 2026-06-20 - [Zero-Allocation Struct Keys for O(N^2) Hashmaps]
 **Learning:** Using string concatenation (`src + "-" + dst`) to create unique keys for maps inside O(N^2) loops (like graph edge generation) causes massive memory allocations (millions of objects) and garbage collection bottlenecks because each concatenation creates a new string in memory.
 **Action:** Always use an anonymous or dedicated struct with string fields (`type edgeKey struct { src, dst string }`) as the map key. Go handles struct keys efficiently without additional heap allocations, resulting in a 2x performance increase and almost zero allocations per loop iteration.
+## 2025-03-10 - [Avoid strings.Join for large arrays]
+**Learning:** Using `strings.Join` along with `strconv.Itoa` to format an array of integers (like open ports) inside a tight loop causes multiple memory allocations per item, creating significant overhead in operations like CSV exporting.
+**Action:** Preallocate a byte slice buffer (`var portsBuf []byte`) and use `strconv.AppendInt` to construct the delimited string. Reuse the buffer via `portsBuf = portsBuf[:0]` on each loop iteration to reduce allocations from O(N) to O(1) for the entire list.

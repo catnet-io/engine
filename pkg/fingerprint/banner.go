@@ -69,9 +69,21 @@ func grabBannerFromPort(ctx context.Context, ip string, port int, timeout time.D
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err == nil && n > 0 {
-		return string(buf[:n])
+		rawBanner := string(buf[:n])
+		validBanner := strings.ToValidUTF8(rawBanner, "?")
+		return sanitizeBanner(validBanner)
 	}
 	return ""
+}
+
+func sanitizeBanner(s string) string {
+	var sb strings.Builder
+	for _, r := range s {
+		if r >= 32 && r != 127 || r == '\t' || r == '\n' || r == '\r' {
+			sb.WriteRune(r)
+		}
+	}
+	return strings.TrimSpace(sb.String())
 }
 
 // OsFromBanners infers the OS and device type from collected banners.

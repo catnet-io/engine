@@ -97,15 +97,26 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 	}
 
 	// host -> host edges
+	const maxEdgesPerSubnet = 200
 	type edgeKey struct {
 		src, dst string
 	}
 	addedHostEdges := make(map[edgeKey]struct{})
 	for _, portsMap := range subnetMap {
+		edgesInSubnet := 0
 		for _, ipList := range portsMap {
+			if edgesInSubnet >= maxEdgesPerSubnet {
+				break
+			}
 			if len(ipList) > 1 {
 				for i := 0; i < len(ipList); i++ {
+					if edgesInSubnet >= maxEdgesPerSubnet {
+						break
+					}
 					for j := i + 1; j < len(ipList); j++ {
+						if edgesInSubnet >= maxEdgesPerSubnet {
+							break
+						}
 						src := ipList[i]
 						dst := ipList[j]
 						if src == dst {
@@ -125,6 +136,7 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 								Target: dst,
 								Weight: 0.3,
 							})
+							edgesInSubnet++
 						}
 					}
 				}

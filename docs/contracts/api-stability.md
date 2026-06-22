@@ -15,6 +15,9 @@ The following packages form the core stable surface of the ecosystem. Breaking c
 
 ## Experimental / Internal Packages
 
+- **`pkg/fingerprint`**: Heuristic and banner-based operating system and device type detection mechanisms. Experimental and subject to change.
+- **`pkg/topology`**: Adjacency graph generation from scan reports. Experimental and subject to change.
+
 Any package under `internal/` is strictly internal and offers **zero stability guarantees**. It may be changed or removed at any time without warning. Consumers must not import `internal/` packages.
 
 ## Deprecated Packages
