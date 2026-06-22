@@ -112,10 +112,21 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 								// Keep output deterministic since channel receives can be unordered
 								sort.Ints(di.OpenPorts)
 
-								fp := fingerprint.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+								var fp FingerprintData
+								if cfg.FingerprintProvider != nil {
+									fp = cfg.FingerprintProvider.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+								} else {
+									res := fingerprint.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+									fp = FingerprintData{
+										OS:         res.OS,
+										OSFamily:   res.OSFamily,
+										DeviceType: string(res.DeviceType),
+										Vendor:     res.Vendor,
+									}
+								}
 								di.OS = fp.OS
 								di.OSFamily = fp.OSFamily
-								di.DeviceType = string(fp.DeviceType)
+								di.DeviceType = fp.DeviceType
 								di.Vendor = fp.Vendor
 							}
 
