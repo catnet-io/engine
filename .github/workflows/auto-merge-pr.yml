@@ -36,21 +36,20 @@ jobs:
           git config gpg.format ssh
           git config user.signingkey ~/.ssh/id_ed25519.pub
           git config commit.gpgsign true
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "mendsec"
+          git config user.email "fabiomendesilva@gmail.com"
           echo "SSH signing configured."
 
-      - name: Create signed squash branch
+      - name: Create signed rebased branch
         run: |
           COUNT=$(git rev-list --count origin/main..origin/develop 2>/dev/null || echo "0")
           if [ "$COUNT" -eq "0" ]; then
             echo "No new commits, nothing to do."
             exit 0
           fi
-          git checkout -B develop-signed origin/main
-          git merge --squash origin/develop
-          git commit -S -m "chore: merge develop → main"
-          echo "Created signed squash commit on develop-signed."
+          git checkout -B develop-signed origin/develop
+          GIT_SEQUENCE_EDITOR=true git rebase -i --exec 'git commit --amend --no-edit -S' origin/main
+          echo "Signed $COUNT commit(s) via rebase on develop-signed."
           git push origin HEAD:develop-signed
 
       - name: Close old PR (develop → main)
@@ -59,7 +58,7 @@ jobs:
         run: |
           OLD_PR=$(gh pr list --head develop --base main --json number -q '.[0].number' 2>/dev/null || echo "")
           if [ -n "$OLD_PR" ]; then
-            gh pr close "$OLD_PR" --comment "Replaced by signed squash PR." 2>/dev/null || true
+            gh pr close "$OLD_PR" --comment "Replaced by signed rebased PR." 2>/dev/null || true
             echo "Closed old PR #$OLD_PR."
           fi
 
@@ -71,6 +70,6 @@ jobs:
             --base main \
             --head develop-signed \
             --title "chore: merge develop → main" \
-            --body "Automated PR by github-actions[bot] (signed squash)." \
+            --body "Automated PR by github-actions[bot] (signed rebase)." \
             2>/dev/null || \
             echo "PR already exists, skipping."
