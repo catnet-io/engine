@@ -64,8 +64,7 @@ jobs:
           git config commit.gpgsign true
 
           # ── Checkout the local develop branch ──
-          git checkout develop
-          git reset --hard origin/develop
+          git checkout -B develop origin/develop
 
           # ── Determine the commit range to sign ──
           MERGE_BASE=$(git merge-base origin/main develop)
