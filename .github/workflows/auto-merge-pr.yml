@@ -22,6 +22,7 @@ jobs:
       - name: Check diff
         id: diff
         run: |
+          git fetch origin main --depth=1 2>/dev/null || true
           COUNT=$(git rev-list --count origin/main..origin/develop 2>/dev/null || echo "0")
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           echo "develop is $COUNT commit(s) ahead of main."
