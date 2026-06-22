@@ -1,8 +1,6 @@
 package topology
 
 import (
-	"strings"
-
 	"github.com/mendsec/catnet-core/pkg/results"
 )
 
@@ -74,9 +72,21 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 		}
 
 		// Find /24 subnet
-		parts := strings.Split(dev.IP, ".")
-		if len(parts) == 4 {
-			subnet := strings.Join(parts[:3], ".")
+		// ⚡ Bolt Optimization: Use zero-allocation counting and slicing
+		// Avoids massive allocation overhead and ensures exactly 3 dots (valid IPv4)
+		dots := 0
+		thirdDotIdx := -1
+		for i := 0; i < len(dev.IP); i++ {
+			if dev.IP[i] == '.' {
+				dots++
+				if dots == 3 {
+					thirdDotIdx = i
+				}
+			}
+		}
+
+		if dots == 3 && thirdDotIdx != -1 {
+			subnet := dev.IP[:thirdDotIdx]
 			if subnetMap[subnet] == nil {
 				subnetMap[subnet] = make(map[int][]string)
 			}
@@ -87,9 +97,11 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 	}
 
 	// host -> host edges
-	addedHostEdges := make(map[string]bool)
 	const maxEdgesPerSubnet = 200
-
+	type edgeKey struct {
+		src, dst string
+	}
+	addedHostEdges := make(map[edgeKey]struct{})
 	for _, portsMap := range subnetMap {
 		edgesInSubnet := 0
 		for _, ipList := range portsMap {
@@ -114,9 +126,11 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 						if src > dst {
 							src, dst = dst, src
 						}
-						key := src + "-" + dst
-						if !addedHostEdges[key] {
-							addedHostEdges[key] = true
+						// ⚡ Bolt Optimization: Use zero-allocation struct key instead of string concatenation.
+						// This prevents massive memory allocation and GC overhead in dense O(N^2) graphs.
+						key := edgeKey{src, dst}
+						if _, exists := addedHostEdges[key]; !exists {
+							addedHostEdges[key] = struct{}{}
 							graph.Edges = append(graph.Edges, TopologyEdge{
 								Source: src,
 								Target: dst,
