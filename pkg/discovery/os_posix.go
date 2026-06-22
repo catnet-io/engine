@@ -116,7 +116,11 @@ func parseProcNetArp(data []byte, ip string) string {
 		if eol == -1 {
 			break
 		}
-		dataToSearch = dataToSearch[start+eol:]
+		next := start + eol + 1
+		if next >= len(dataToSearch) {
+			break
+		}
+		dataToSearch = dataToSearch[next:]
 	}
 	return ""
 }

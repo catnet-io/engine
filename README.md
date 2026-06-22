@@ -22,12 +22,14 @@ Before adopting `catnet-core`, please review our documentation:
 | Package | Public Types & Functions | Description |
 |---|---|---|
 | `pkg/engine` | `ScanConfig`, `DefaultConfig`, `StartScan` | Main scan orchestrator using `context.Context`. |
-| `pkg/results` | `DeviceInfo` | Core models used across the ecosystem. |
+| `pkg/results` | `DeviceInfo`, `ScanReport` | Core models used across the ecosystem. |
 | `pkg/targets` | `ParseRange` | Target parsing and CIDR utilities. |
 | `pkg/discovery` | `Ping`, `ReverseDNS`, `GetMAC` | Host liveness and resolution primitives. |
 | `pkg/ports` | `ScanPorts` | Port scanning utilities. |
 | `pkg/exporter` | `ExportJSON`, `ExportXML`, `ExportCSV` | Safe result export functions. JSON is the canonical schema reference format. |
-| `pkg/scanner` | *Deprecated* | Temporary compatibility wrapper. Do not use for new code. |
+| `pkg/fingerprint` | `Fingerprint`, `GrabBanners`, `VendorFromMAC` | Heuristic OS/device detection. **Experimental.** |
+| `pkg/topology` | `BuildGraph`, `ExportD3JSON`, `DetectGateway` | Network topology graph builder. **Experimental.** |
+| `pkg/coreerr` | `ErrTimeout`, `ErrCancelled`, `ErrInvalidInput`, ... | Structured error taxonomy for `errors.Is`. |
 
 ## Quickstart
 

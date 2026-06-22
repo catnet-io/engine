@@ -6,35 +6,48 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 // GrabBanners attempts to read banners from open ports.
-func GrabBanners(ctx context.Context, ip string, openPorts []int, timeoutMs int) map[int]string {
+func GrabBanners(ctx context.Context, ip string, openPorts []int, timeoutMs int, bc BannerGrabConfig) map[int]string {
 	banners := make(map[int]string)
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
 	timeout := time.Duration(timeoutMs) * time.Millisecond
 
-	for _, port := range openPorts {
+	workers := BannerConcurrency
+	if len(openPorts) < workers {
+		workers = len(openPorts)
+	}
+	var index int32 = -1
+
+	for w := 0; w < workers; w++ {
 		wg.Add(1)
-		go func(p int) {
+		go func() {
 			defer wg.Done()
-			banner := grabBannerFromPort(ctx, ip, p, timeout)
-			if banner != "" {
-				mu.Lock()
-				banners[p] = banner
-				mu.Unlock()
+			for {
+				idx := int(atomic.AddInt32(&index, 1))
+				if idx >= len(openPorts) {
+					return
+				}
+				banner := grabBannerFromPort(ctx, ip, openPorts[idx], timeout, bc)
+				if banner != "" {
+					mu.Lock()
+					banners[openPorts[idx]] = banner
+					mu.Unlock()
+				}
 			}
-		}(port)
+		}()
 	}
 
 	wg.Wait()
 	return banners
 }
 
-func grabBannerFromPort(ctx context.Context, ip string, port int, timeout time.Duration) string {
+func grabBannerFromPort(ctx context.Context, ip string, port int, timeout time.Duration, bc BannerGrabConfig) string {
 	dialer := net.Dialer{Timeout: timeout}
 	conn, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
@@ -52,8 +65,8 @@ func grabBannerFromPort(ctx context.Context, ip string, port int, timeout time.D
 	if port == 80 || port == 8080 {
 		req := "HEAD / HTTP/1.0\r\n\r\n"
 		_, _ = conn.Write([]byte(req))
-	} else if port == 445 {
-		// Basic SMB negotiate request
+	} else if port == 445 && bc.AggressiveSMB {
+		// Basic SMB negotiate request — opt-in only; may trigger IDS/IPS alerts.
 		smbReq := []byte{
 			0x00, 0x00, 0x00, 0x2f, 0xff, 0x53, 0x4d, 0x42,
 			0x72, 0x00, 0x00, 0x00, 0x00, 0x08, 0x01, 0x40,
