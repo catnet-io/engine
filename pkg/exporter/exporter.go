@@ -22,12 +22,17 @@ func ExportJSON(report *results.ScanReport) ([]byte, error) {
 }
 
 // ExportXML exporta resultados para formato XML.
+// Os campos incluídos por dispositivo: IP, Hostname, MAC, Status, OS, DeviceType, Vendor, Open Ports.
+// OSFamily é omitido por redundância com OS.
 func ExportXML(report *results.ScanReport) ([]byte, error) {
 	type XMLDevice struct {
-		IP       string `xml:"ip"`
-		Hostname string `xml:"hostname"`
-		MAC      string `xml:"mac"`
-		Status   string `xml:"status"`
+		IP         string `xml:"ip"`
+		Hostname   string `xml:"hostname"`
+		MAC        string `xml:"mac"`
+		Status     string `xml:"status"`
+		OS         string `xml:"os,omitempty"`
+		DeviceType string `xml:"deviceType,omitempty"`
+		Vendor     string `xml:"vendor,omitempty"`
 	}
 	type XMLResults struct {
 		XMLName xml.Name    `xml:"results"`
@@ -41,6 +46,7 @@ func ExportXML(report *results.ScanReport) ([]byte, error) {
 		}
 		res.Devices = append(res.Devices, XMLDevice{
 			IP: d.IP, Hostname: d.Hostname, MAC: d.MAC, Status: status,
+			OS: d.OS, DeviceType: d.DeviceType, Vendor: d.Vendor,
 		})
 	}
 	out, err := xml.MarshalIndent(res, "", "\t")
@@ -68,16 +74,18 @@ func sanitizeCSVField(field string) string {
 }
 
 // ExportCSV exporta resultados para formato CSV.
+// Os campos incluídos por dispositivo: IP, Hostname, MAC, Status, OS, DeviceType, Vendor, Open Ports.
+// OSFamily é omitido por redundância com OS.
 func ExportCSV(report *results.ScanReport) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
-	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "Open Ports"}); err != nil {
+	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "OS", "DeviceType", "Vendor", "Open Ports"}); err != nil {
 		return nil, fmt.Errorf("%w: failed to write CSV header: %v", coreerr.ErrExport, err)
 	}
 
 	// ⚡ Bolt Optimization: Reuse string slice and avoid strings.Join overhead
 	// This reduces allocations per device from ~6 to 1 and speeds up CSV generation
-	row := make([]string, 5)
+	row := make([]string, 8)
 	var portsBuf []byte
 
 	for _, d := range report.Devices {
@@ -89,6 +97,9 @@ func ExportCSV(report *results.ScanReport) ([]byte, error) {
 		} else {
 			row[3] = "Dead"
 		}
+		row[4] = sanitizeCSVField(d.OS)
+		row[5] = sanitizeCSVField(d.DeviceType)
+		row[6] = sanitizeCSVField(d.Vendor)
 
 		portsBuf = portsBuf[:0]
 		for i, p := range d.OpenPorts {
@@ -97,7 +108,7 @@ func ExportCSV(report *results.ScanReport) ([]byte, error) {
 			}
 			portsBuf = strconv.AppendInt(portsBuf, int64(p), 10)
 		}
-		row[4] = string(portsBuf)
+		row[7] = string(portsBuf)
 
 		if err := writer.Write(row); err != nil {
 			return nil, fmt.Errorf("%w: failed to write CSV record: %v", coreerr.ErrExport, err)

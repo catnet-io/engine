@@ -22,7 +22,7 @@ func ScanPorts(ctx context.Context, ip string, ports []int, timeoutMs int) <-cha
 		close(out)
 		return out
 	}
-	
+
 	timeout := time.Duration(timeoutMs) * time.Millisecond
 
 	var wg sync.WaitGroup

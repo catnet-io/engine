@@ -90,89 +90,61 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 				}
 				ip := ips[idx]
 
-				select {
-				case <-ctx.Done():
+				if ctx.Err() != nil {
 					return
-				default:
-					di := results.DeviceInfo{IP: ip}
-					di.IsAlive = discovery.Ping(ctx, ip, cfg.PingTimeoutMs)
-					if di.IsAlive && ctx.Err() == nil {
-						di.Hostname = discovery.ReverseDNS(ip)
-						di.MAC = discovery.GetMAC(ip)
+				}
 
-						wg.Add(1)
-						go func(di results.DeviceInfo) {
-							defer wg.Done()
-							if ctx.Err() == nil {
-								portChan := ports.ScanPorts(ctx, di.IP, cfg.DefaultPorts, cfg.PortTimeoutMs)
-								for p := range portChan {
-									di.OpenPorts = append(di.OpenPorts, p)
-								}
+				di := results.DeviceInfo{IP: ip}
+				di.IsAlive = discovery.Ping(ctx, ip, cfg.PingTimeoutMs)
+				if di.IsAlive && ctx.Err() == nil {
+					di.Hostname = discovery.ReverseDNS(ip)
+					di.MAC = discovery.GetMAC(ip)
 
-								// Keep output deterministic since channel receives can be unordered
-								sort.Ints(di.OpenPorts)
-
-								var fp FingerprintData
-								if cfg.FingerprintProvider != nil {
-									fp = cfg.FingerprintProvider.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
-								} else {
-									res := fingerprint.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
-									fp = FingerprintData{
-										OS:         res.OS,
-										OSFamily:   res.OSFamily,
-										DeviceType: string(res.DeviceType),
-										Vendor:     res.Vendor,
-									}
-								}
-								di.OS = fp.OS
-								di.OSFamily = fp.OSFamily
-								di.DeviceType = fp.DeviceType
-								di.Vendor = fp.Vendor
-							}
-
-							mu.Lock()
-							report.Devices = append(report.Devices, di)
-							if di.IsAlive {
-								report.Alive++
-							}
-							mu.Unlock()
-
-							curr := atomic.AddInt32(&processed, 1)
-							if onEvent != nil {
-								diCopy := di
-								onEvent(ScanEvent{
-									Type:     EventResult,
-									Device:   &diCopy,
-									Progress: float64(curr) / float64(total),
-								})
-								onEvent(ScanEvent{
-									Type:     EventProgress,
-									Device:   nil,
-									Progress: float64(curr) / float64(total),
-								})
-							}
-						}(di)
-					} else {
-						mu.Lock()
-						report.Devices = append(report.Devices, di)
-						mu.Unlock()
-
-						curr := atomic.AddInt32(&processed, 1)
-						if onEvent != nil {
-							diCopy := di
-							onEvent(ScanEvent{
-								Type:     EventResult,
-								Device:   &diCopy,
-								Progress: float64(curr) / float64(total),
-							})
-							onEvent(ScanEvent{
-								Type:     EventProgress,
-								Device:   nil,
-								Progress: float64(curr) / float64(total),
-							})
-						}
+					portChan := ports.ScanPorts(ctx, di.IP, cfg.DefaultPorts, cfg.PortTimeoutMs)
+					for p := range portChan {
+						di.OpenPorts = append(di.OpenPorts, p)
 					}
 
+					sort.Ints(di.OpenPorts)
+
+					var fp FingerprintData
+					if cfg.FingerprintProvider != nil {
+						fp = cfg.FingerprintProvider.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+					} else {
+						res := fingerprint.Fingerprint(ctx, di.IP, di.MAC, 0, di.OpenPorts, cfg.PingTimeoutMs)
+						fp = FingerprintData{
+							OS:         res.OS,
+							OSFamily:   res.OSFamily,
+							DeviceType: string(res.DeviceType),
+							Vendor:     res.Vendor,
+						}
+					}
+					di.OS = fp.OS
+					di.OSFamily = fp.OSFamily
+					di.DeviceType = fp.DeviceType
+					di.Vendor = fp.Vendor
+				}
+
+				mu.Lock()
+				report.Devices = append(report.Devices, di)
+				if di.IsAlive {
+					report.Alive++
+				}
+				mu.Unlock()
+
+				curr := atomic.AddInt32(&processed, 1)
+				if onEvent != nil {
+					diCopy := di
+					onEvent(ScanEvent{
+						Type:     EventResult,
+						Device:   &diCopy,
+						Progress: float64(curr) / float64(total),
+					})
+					onEvent(ScanEvent{
+						Type:     EventProgress,
+						Device:   nil,
+						Progress: float64(curr) / float64(total),
+					})
 				}
 			}
 		}()
