@@ -44,6 +44,7 @@ jobs:
           echo "needs_signing=$NEEDS_SIGNING" >> "$GITHUB_OUTPUT"
 
       - name: Sign commits with SSH
+        id: sign
         if: steps.signing.outputs.needs_signing == 'true'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.BOT_SSH_PRIVATE_KEY }}
@@ -54,6 +55,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+
+          # ── Validate SSH key ──
+          if ! ssh-keygen -lf ~/.ssh/id_rsa &>/dev/null; then
+            echo "⚠️  BOT_SSH_PRIVATE_KEY is missing or invalid — skipping signing."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
           # ── Configure git for SSH signing ──
@@ -76,8 +85,6 @@ jobs:
           export GIT_COMMITTER_EMAIL="fabiomendesilva@gmail.com"
 
           # ── Use filter-branch to re-sign every commit (preserving merge structure) ──
-          # --env-filter rewrites author/committer to fabiomendesilva@gmail.com
-          # --commit-filter signs each commit with SSH via -S
           FILTER_BRANCH_SQUELCH_WARNING=1 \
           git filter-branch --force \
             --env-filter '
@@ -104,12 +111,17 @@ jobs:
 
           echo ""
           echo "✅ All commits signed and pushed."
+          echo "signed=true" >> "$GITHUB_OUTPUT"
 
       - name: Create or update Pull Request
         if: steps.diff.outputs.commit_count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SIGNED: ${{ steps.sign.outputs.signed }}
         run: |
+          # ── Make sure develop is checked out ──
+          git checkout -B develop origin/develop
+
           # Check if an open PR from develop → main already exists
           EXISTING_PR=$(gh pr list \
             --base main \
@@ -127,11 +139,17 @@ jobs:
           COMMITS=$(git log --oneline origin/main..origin/develop)
           COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
 
+          if [ "$SIGNED" = "true" ]; then
+            SIGNED_MSG="All commits are SSH-signed. ✅"
+          else
+            SIGNED_MSG="Commits were not re-signed (SSH key unavailable)."
+          fi
+
           BODY=$(cat <<EOF
           ## Merge develop → main
 
           Automated PR opened by \`github-actions[bot]\`.
-          All commits are GPG-signed. ✅
+          $SIGNED_MSG
 
           ### Commits included ($COMMIT_COUNT)
 
@@ -141,7 +159,6 @@ jobs:
 
           ### Checklist
           - [x] CI passes on \`develop\`
-          - [x] Commits are GPG-signed
           - [ ] Code review approved
           - [ ] Ready to merge
           EOF
