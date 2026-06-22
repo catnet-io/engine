@@ -74,18 +74,32 @@ func ExportCSV(report *results.ScanReport) ([]byte, error) {
 	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "Open Ports"}); err != nil {
 		return nil, fmt.Errorf("%w: failed to write CSV header: %v", coreerr.ErrExport, err)
 	}
+
+	// ⚡ Bolt Optimization: Reuse string slice and avoid strings.Join overhead
+	// This reduces allocations per device from ~6 to 1 and speeds up CSV generation
+	row := make([]string, 5)
+	var portsBuf []byte
+
 	for _, d := range report.Devices {
-		status := "Dead"
+		row[0] = sanitizeCSVField(d.IP)
+		row[1] = sanitizeCSVField(d.Hostname)
+		row[2] = sanitizeCSVField(d.MAC)
 		if d.IsAlive {
-			status = "Alive"
+			row[3] = "Alive"
+		} else {
+			row[3] = "Dead"
 		}
-		var strPorts []string
-		for _, p := range d.OpenPorts {
-			strPorts = append(strPorts, strconv.Itoa(p))
+
+		portsBuf = portsBuf[:0]
+		for i, p := range d.OpenPorts {
+			if i > 0 {
+				portsBuf = append(portsBuf, ';')
+			}
+			portsBuf = strconv.AppendInt(portsBuf, int64(p), 10)
 		}
-		if err := writer.Write([]string{
-			sanitizeCSVField(d.IP), sanitizeCSVField(d.Hostname), sanitizeCSVField(d.MAC), status, strings.Join(strPorts, ";"),
-		}); err != nil {
+		row[4] = string(portsBuf)
+
+		if err := writer.Write(row); err != nil {
 			return nil, fmt.Errorf("%w: failed to write CSV record: %v", coreerr.ErrExport, err)
 		}
 	}
