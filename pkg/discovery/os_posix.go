@@ -45,58 +45,12 @@ func osGetMAC(ip string) string {
 		return ""
 	}
 
-	// Fast path for Linux
 	if data, err := os.ReadFile("/proc/net/arp"); err == nil {
-		// ⚡ Bolt Optimization: Use zero-allocation bytes indexing to scan large ARP tables.
-		// Avoids massive strings.Split and strings.Fields memory overhead on systems with thousands of neighbors.
-		ipSpace := []byte("\n" + ip + " ")
-		ipTab := []byte("\n" + ip + "\t")
-
-		dataToSearch := data
-		for {
-			idx := bytes.Index(dataToSearch, ipSpace)
-			if idx == -1 {
-				idx = bytes.Index(dataToSearch, ipTab)
-			}
-
-			// Edge case: target is on the very first line without a preceding newline
-			if idx == -1 && (bytes.HasPrefix(dataToSearch, []byte(ip+" ")) || bytes.HasPrefix(dataToSearch, []byte(ip+"\t"))) {
-				idx = -1 // Indicates start of slice
-			} else if idx == -1 {
-				break
-			}
-
-			start := idx + 1
-			eol := bytes.IndexByte(dataToSearch[start:], '\n')
-			var line []byte
-			if eol == -1 {
-				line = dataToSearch[start:]
-			} else {
-				line = dataToSearch[start : start+eol]
-			}
-
-			fields := bytes.Fields(line)
-			if len(fields) >= 4 && string(fields[0]) == ip {
-				mac := string(fields[3])
-				// Ignore incomplete ARP entries
-				if mac != "00:00:00:00:00:00" {
-					return strings.ToUpper(strings.ReplaceAll(mac, ":", "-"))
-				}
-				break // Found the IP, but it's incomplete
-			}
-
-			if eol == -1 {
-				break
-			}
-			dataToSearch = dataToSearch[start+eol:]
-		}
-
-		// If we successfully read /proc/net/arp but didn't find the IP (or it was incomplete),
-		// we know the MAC is unresolved. Do not fall back to `arp -an` which would just re-verify the same miss.
-		return ""
+		return parseProcNetArp(data, ip)
 	}
 
 	// Fallback for macOS, BSD, or if /proc isn't mounted
+
 	cmd := exec.Command("arp", "-an")
 	out, err := cmd.Output()
 	if err != nil {
@@ -114,6 +68,55 @@ func osGetMAC(ip string) string {
 				}
 			}
 		}
+	}
+	return ""
+}
+
+// parseProcNetArp reads /proc/net/arp efficiently without massive allocations
+func parseProcNetArp(data []byte, ip string) string {
+	ipSpace := []byte("\n" + ip + " ")
+	ipTab := []byte("\n" + ip + "\t")
+	ipFirstSpace := []byte(ip + " ")
+	ipFirstTab := []byte(ip + "\t")
+
+	dataToSearch := data
+	for len(dataToSearch) > 0 {
+		var start int
+		if bytes.HasPrefix(dataToSearch, ipFirstSpace) || bytes.HasPrefix(dataToSearch, ipFirstTab) {
+			start = 0
+		} else {
+			idx := bytes.Index(dataToSearch, ipSpace)
+			if idx == -1 {
+				idx = bytes.Index(dataToSearch, ipTab)
+			}
+			if idx == -1 {
+				break
+			}
+			start = idx + 1 // skip the newline
+		}
+
+		eol := bytes.IndexByte(dataToSearch[start:], '\n')
+		var line []byte
+		if eol == -1 {
+			line = dataToSearch[start:]
+		} else {
+			line = dataToSearch[start : start+eol]
+		}
+
+		fields := bytes.Fields(line)
+		if len(fields) >= 4 && string(fields[0]) == ip {
+			mac := string(fields[3])
+			// Ignore incomplete ARP entries
+			if mac != "00:00:00:00:00:00" {
+				return strings.ToUpper(strings.ReplaceAll(mac, ":", "-"))
+			}
+			break // Found the IP, but it's incomplete
+		}
+
+		if eol == -1 {
+			break
+		}
+		dataToSearch = dataToSearch[start+eol:]
 	}
 	return ""
 }
