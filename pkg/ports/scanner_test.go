@@ -34,9 +34,13 @@ func TestScanPorts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			open := ScanPorts(context.Background(), tt.ip, tt.ports, tt.timeoutMs)
-			if len(open) != tt.wantCount {
-				t.Errorf("ScanPorts() returned %d open ports, want %d", len(open), tt.wantCount)
+			openChan := ScanPorts(context.Background(), tt.ip, tt.ports, tt.timeoutMs)
+			count := 0
+			for range openChan {
+				count++
+			}
+			if count != tt.wantCount {
+				t.Errorf("ScanPorts() returned %d open ports, want %d", count, tt.wantCount)
 			}
 		})
 	}
