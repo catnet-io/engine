@@ -5,14 +5,15 @@ on:
     branches: [develop]
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   open-pr:
     runs-on: ubuntu-latest
     if: github.actor != 'github-actions[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v7
