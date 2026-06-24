@@ -1,7 +1,25 @@
 package results
 
-// HostResult is a compatibility alias for DeviceInfo.
-type HostResult = DeviceInfo
+// HostResult é o tipo canônico de resultado de varredura para a API event-driven.
+// Usado pelos pacotes scan, events e export como formato de intercâmbio.
+type HostResult struct {
+	IP        string `json:"ip"`
+	Alive     bool   `json:"alive"`
+	Hostname  string `json:"hostname"`
+	MAC       string `json:"mac"`
+	OpenPorts []int  `json:"open_ports"`
+}
+
+// ToDeviceInfo converte HostResult para DeviceInfo, preservando campos comuns.
+func (h HostResult) ToDeviceInfo() DeviceInfo {
+	return DeviceInfo{
+		IP:        h.IP,
+		IsAlive:   h.Alive,
+		Hostname:  h.Hostname,
+		MAC:       h.MAC,
+		OpenPorts: h.OpenPorts,
+	}
+}
 
 // DeviceInfo representa o resultado da varredura de um único host.
 type DeviceInfo struct {
