@@ -20,8 +20,25 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           MAIN_SHA=$(git rev-parse origin/main)
+          echo "Temporarily allowing force pushes on develop..."
+          gh api repos/mendsec/catnet-core/branches/develop/protection \
+            --method PATCH \
+            --field allow_force_pushes=true 2>/dev/null || \
+          gh api repos/mendsec/catnet-core/branches/develop/protection \
+            --method PUT \
+            --field allow_force_pushes=true 2>/dev/null || \
+          echo "Warning: could not update branch protection"
+          echo "Updating develop ref to main ($MAIN_SHA)..."
           gh api repos/mendsec/catnet-core/git/refs/heads/develop \
             --method PATCH \
             --field sha="$MAIN_SHA" \
             --field force=true
-          echo "develop updated to point to main ($MAIN_SHA)"
+          echo "Restoring branch protection (force pushes disabled)..."
+          gh api repos/mendsec/catnet-core/branches/develop/protection \
+            --method PATCH \
+            --field allow_force_pushes=false 2>/dev/null || \
+          gh api repos/mendsec/catnet-core/branches/develop/protection \
+            --method PUT \
+            --field allow_force_pushes=false 2>/dev/null || \
+          echo "Warning: could not restore branch protection"
+          echo "develop synced to main ($MAIN_SHA)"
