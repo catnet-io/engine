@@ -3,7 +3,7 @@ package events
 type Type int
 
 const (
-	ScanStarted      Type = iota
+	ScanStarted Type = iota
 	HostDiscovered
 	ScanProgress
 	ScanCompleted
