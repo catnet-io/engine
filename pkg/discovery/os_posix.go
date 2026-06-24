@@ -64,7 +64,7 @@ func osGetMAC(ip string) string {
 			parts := strings.Fields(line)
 			for _, p := range parts {
 				if strings.Contains(p, ":") && len(p) == 17 {
-					return strings.ToUpper(strings.ReplaceAll(p, ":", "-"))
+					return formatMAC(p)
 				}
 			}
 		}
@@ -108,7 +108,7 @@ func parseProcNetArp(data []byte, ip string) string {
 			mac := string(fields[3])
 			// Ignore incomplete ARP entries
 			if mac != "00:00:00:00:00:00" {
-				return strings.ToUpper(strings.ReplaceAll(mac, ":", "-"))
+				return formatMAC(mac)
 			}
 			break // Found the IP, but it's incomplete
 		}
@@ -123,4 +123,24 @@ func parseProcNetArp(data []byte, ip string) string {
 		dataToSearch = dataToSearch[next:]
 	}
 	return ""
+}
+
+// formatMAC formats a MAC address (e.g. aa:bb:cc:dd:ee:ff) to AA-BB-CC-DD-EE-FF
+// ⚡ Bolt Optimization: Use a stack-allocated byte array to avoid strings.ToUpper and strings.ReplaceAll allocations.
+func formatMAC(mac string) string {
+	if len(mac) != 17 {
+		return mac
+	}
+	var out [17]byte
+	for i := 0; i < 17; i++ {
+		c := mac[i]
+		if c == ':' {
+			out[i] = '-'
+		} else if c >= 'a' && c <= 'z' {
+			out[i] = c - 'a' + 'A'
+		} else {
+			out[i] = c
+		}
+	}
+	return string(out[:])
 }
