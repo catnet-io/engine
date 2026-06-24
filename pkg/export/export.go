@@ -11,7 +11,6 @@ import (
 	"github.com/mendsec/catnet-core/pkg/results"
 )
 
-// ExportJSON serializa uma lista de HostResult para JSON indentado.
 func ExportJSON(devices []results.HostResult) ([]byte, error) {
 	out, err := json.MarshalIndent(devices, "", "  ")
 	if err != nil {
@@ -20,7 +19,6 @@ func ExportJSON(devices []results.HostResult) ([]byte, error) {
 	return out, nil
 }
 
-// sanitizeCSVField previne CSV injection prefixando campos perigosos com aspas simples.
 func sanitizeCSVField(field string) string {
 	if len(field) > 0 {
 		fc := field[0]
@@ -31,7 +29,6 @@ func sanitizeCSVField(field string) string {
 	return field
 }
 
-// ExportCSV serializa uma lista de HostResult para CSV com sanitização de injeção.
 func ExportCSV(devices []results.HostResult) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)

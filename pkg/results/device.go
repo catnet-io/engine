@@ -1,7 +1,5 @@
 package results
 
-// HostResult é o tipo canônico de resultado de varredura para a API event-driven.
-// Usado pelos pacotes scan, events e export como formato de intercâmbio.
 type HostResult struct {
 	IP        string `json:"ip"`
 	Alive     bool   `json:"alive"`
@@ -10,7 +8,6 @@ type HostResult struct {
 	OpenPorts []int  `json:"open_ports"`
 }
 
-// ToDeviceInfo converte HostResult para DeviceInfo, preservando campos comuns.
 func (h HostResult) ToDeviceInfo() DeviceInfo {
 	return DeviceInfo{
 		IP:        h.IP,
@@ -21,7 +18,6 @@ func (h HostResult) ToDeviceInfo() DeviceInfo {
 	}
 }
 
-// DeviceInfo representa o resultado da varredura de um único host.
 type DeviceInfo struct {
 	IP         string `json:"ip"`
 	IsAlive    bool   `json:"isAlive"`
@@ -34,7 +30,6 @@ type DeviceInfo struct {
 	OpenPorts  []int  `json:"openPorts"`
 }
 
-// PortCount retorna a quantidade de portas abertas.
 func (d DeviceInfo) PortCount() int {
 	return len(d.OpenPorts)
 }
