@@ -43,8 +43,7 @@ jobs:
 
       - name: Create signed branch
         run: |
-          git diff --quiet origin/main origin/develop 2>/dev/null
-          if [ $? -eq 0 ]; then
+          if git diff --quiet origin/main origin/develop 2>/dev/null; then
             echo "No tree differences, nothing to do."
             exit 0
           fi
