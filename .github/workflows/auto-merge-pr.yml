@@ -32,7 +32,7 @@ jobs:
             2>/dev/null || \
             echo "PR already exists, skipping."
 
-      - name: Request review
+      - name: Request review and enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -40,5 +40,10 @@ jobs:
           if [ -n "$PR_NUMBER" ]; then
             gh pr edit "$PR_NUMBER" --add-reviewer mendsec 2>/dev/null || \
             echo "Could not request review."
+            
+            # Enforce merge strategy to prevent squash, which causes develop to diverge
+            gh pr merge "$PR_NUMBER" --merge --auto 2>/dev/null || \
+            echo "Could not enable auto-merge. Ensure 'Allow merge commits' is enabled in repo settings."
+            
             echo "PR #$PR_NUMBER updated. Waiting for review from mendsec."
           fi
