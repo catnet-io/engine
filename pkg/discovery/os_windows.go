@@ -6,12 +6,21 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os/exec"
 	"syscall"
 	"unsafe"
 )
 
+var (
+	iphlpapi        = syscall.NewLazyDLL("iphlpapi.dll")
+	icmpCreateFile  = iphlpapi.NewProc("IcmpCreateFile")
+	icmpSendEcho    = iphlpapi.NewProc("IcmpSendEcho")
+	icmpCloseHandle = iphlpapi.NewProc("IcmpCloseHandle")
+	sendARP         = iphlpapi.NewProc("SendARP")
+)
+
 // osPing faz ping no Windows
+// ⚡ Bolt Optimization: Use native IcmpSendEcho from iphlpapi.dll instead of spawning ping.exe.
+// This avoids process-creation overhead on Windows for massive concurrent scans.
 func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 	if net.ParseIP(ip) == nil {
 		return false
@@ -19,15 +28,64 @@ func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 	if timeoutMs <= 0 {
 		timeoutMs = 1000 // safe default
 	}
-	cmd := exec.CommandContext(ctx, "ping", "-n", "1", "-w", fmt.Sprintf("%d", timeoutMs), ip)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	return cmd.Run() == nil
+
+	destIP := net.ParseIP(ip).To4()
+	if destIP == nil {
+		return false
+	}
+	var destIPUint32 uint32
+	destIPUint32 = uint32(destIP[0]) | uint32(destIP[1])<<8 | uint32(destIP[2])<<16 | uint32(destIP[3])<<24
+
+	// Result channel
+	resChan := make(chan bool, 1)
+
+	go func() {
+		handle, _, _ := icmpCreateFile.Call()
+		if handle == ^uintptr(0) {
+			resChan <- false
+			return
+		}
+		defer icmpCloseHandle.Call(handle)
+
+		// The ICMP_ECHO_REPLY structure is size 28 bytes on 32-bit and 32 bytes on 64-bit systems.
+		// We'll allocate a 64 byte buffer which is more than enough for the struct + no data payload.
+		replySize := 64
+		replyBuf := make([]byte, replySize)
+
+		// Send echo
+		ret, _, _ := icmpSendEcho.Call(
+			handle,
+			uintptr(destIPUint32),
+			0,
+			0,
+			0,
+			uintptr(unsafe.Pointer(&replyBuf[0])),
+			uintptr(replySize),
+			uintptr(timeoutMs),
+		)
+
+		if ret == 0 {
+			resChan <- false
+			return
+		}
+
+		// Read IP_STATUS from the ICMP_ECHO_REPLY structure.
+		// The offset of the Status field is 4 on both 32-bit and 64-bit Windows.
+		// We check if it is 0 (IP_SUCCESS).
+		status := *(*uint32)(unsafe.Pointer(&replyBuf[4]))
+		resChan <- (status == 0)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return false
+	case res := <-resChan:
+		return res
+	}
 }
 
 // osGetMAC obtém o MAC usando SendARP no Windows
 func osGetMAC(ip string) string {
-	iphlpapi := syscall.NewLazyDLL("iphlpapi.dll")
-	sendARP := iphlpapi.NewProc("SendARP")
 	destIP := net.ParseIP(ip).To4()
 	if destIP == nil {
 		return ""
