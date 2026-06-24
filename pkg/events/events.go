@@ -1,21 +1,23 @@
 package events
 
-type Type int
+import "github.com/mendsec/catnet-core/pkg/results"
+
+type EventType string
 
 const (
-	ScanStarted Type = iota
-	HostDiscovered
-	ScanProgress
-	ScanCompleted
+	ScanStarted    EventType = "scan_started"
+	HostDiscovered EventType = "host_discovered"
+	ScanProgress   EventType = "scan_progress"
+	ScanCompleted  EventType = "scan_completed"
 )
 
 type Event struct {
-	Type Type
-	Data interface{}
+	Type EventType
+	Data any
 }
 
 type HostDiscoveredData struct {
-	Host string
+	Host results.HostResult
 }
 
 type ProgressData struct {

@@ -1,9 +1,23 @@
 package results
 
-// HostResult is a compatibility alias for DeviceInfo.
-type HostResult = DeviceInfo
+type HostResult struct {
+	IP        string `json:"ip"`
+	Alive     bool   `json:"alive"`
+	Hostname  string `json:"hostname"`
+	MAC       string `json:"mac"`
+	OpenPorts []int  `json:"open_ports"`
+}
 
-// DeviceInfo representa o resultado da varredura de um único host.
+func (h HostResult) ToDeviceInfo() DeviceInfo {
+	return DeviceInfo{
+		IP:        h.IP,
+		IsAlive:   h.Alive,
+		Hostname:  h.Hostname,
+		MAC:       h.MAC,
+		OpenPorts: h.OpenPorts,
+	}
+}
+
 type DeviceInfo struct {
 	IP         string `json:"ip"`
 	IsAlive    bool   `json:"isAlive"`
@@ -16,7 +30,6 @@ type DeviceInfo struct {
 	OpenPorts  []int  `json:"openPorts"`
 }
 
-// PortCount retorna a quantidade de portas abertas.
 func (d DeviceInfo) PortCount() int {
 	return len(d.OpenPorts)
 }
