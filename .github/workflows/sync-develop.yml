@@ -16,9 +16,12 @@ jobs:
         with:
           fetch-depth: 0
       - name: Sync develop with main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout develop
-          git merge origin/main --no-edit
-          git push origin develop
+          MAIN_SHA=$(git rev-parse origin/main)
+          gh api repos/mendsec/catnet-core/git/refs/heads/develop \
+            --method PATCH \
+            --field sha="$MAIN_SHA" \
+            --field force=true
+          echo "develop updated to point to main ($MAIN_SHA)"
