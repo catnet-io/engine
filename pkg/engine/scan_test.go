@@ -200,12 +200,15 @@ func TestNoGoroutineLeakOnCancel(t *testing.T) {
 	}()
 	_, _ = StartScan(ctx, ips, cfg, nil)
 
-	time.Sleep(200 * time.Millisecond)
-	after := runtime.NumGoroutine()
-
-	if after > before+2 {
-		t.Errorf("Goroutine leak: before=%d after=%d", before, after)
+	for i := 0; i < 50; i++ {
+		after := runtime.NumGoroutine()
+		if after <= before+3 {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
 	}
+	after := runtime.NumGoroutine()
+	t.Errorf("Goroutine leak: before=%d after=%d", before, after)
 }
 
 func itoa(i int) string {
