@@ -11,24 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      administration: write
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Sync develop with main
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           MAIN_SHA=$(git rev-parse origin/main)
           echo "Removing branch protection on develop..."
-          gh api repos/mendsec/catnet-core/branches/develop/protection \
-            --method DELETE || \
-          echo "Warning: could not remove protection"
+          gh api repos/mendsec/catnet-core/branches/develop/protection --method DELETE
           echo "Force-pushing develop to main ($MAIN_SHA)..."
           git push origin origin/main:refs/heads/develop --force
           echo "Restoring branch protection on develop..."
-          cat <<'JSON' | gh api repos/mendsec/catnet-core/branches/develop/protection --method PUT --input -
-          {"required_status_checks":null,"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null,"required_linear_history":false,"allow_force_pushes":false,"allow_deletions":false,"block_creations":false,"required_conversation_resolution":false,"lock_branch":false,"allow_fork_syncing":true}
-JSON
+          gh api repos/mendsec/catnet-core/branches/develop/protection --method PUT \
+            --field required_status_checks=null \
+            --field enforce_admins=false \
+            --field required_pull_request_reviews=null \
+            --field restrictions=null \
+            --field required_linear_history=false \
+            --field allow_force_pushes=false \
+            --field allow_deletions=false \
+            --field block_creations=false \
+            --field required_conversation_resolution=false \
+            --field lock_branch=false \
+            --field allow_fork_syncing=true
           echo "develop synced to main ($MAIN_SHA)"
