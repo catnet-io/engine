@@ -34,6 +34,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - **SMB probe now opt-in**: `BannerGrabConfig.AggressiveSMB=false` by default. Set to `true` only if permitted by engagement rules.
 
+## [0.3.0] - 2026-06-24
+
+### Added
+- **pkg/results**: `HostResult` — tipo canônico de domínio com `Alive` e `OpenPorts` e JSON tags `alive`/`open_ports`. Substitui `DeviceInfo` como formato de intercâmbio para a API event-driven.
+- **pkg/results**: `HostResult.ToDeviceInfo()` — conversão para compatibilidade com `DeviceInfo`.
+- **pkg/profile**: `ScanProfile`, `DefaultProfile`, `Sanitize` — configuração de varredura com `DefaultPorts`, `Concurrency`, `TimeoutMs` e JSON tags.
+- **pkg/events**: `Event`, `EventType` (string-based), `HostDiscoveredData`, `ProgressData` — sistema de eventos assíncrono via channel.
+- **pkg/export**: `ExportJSON`, `ExportCSV` para `[]results.HostResult` com sanitização CSV.
+- **pkg/scan**: `Engine`, `NewEngine`, `ScanStream`, `Stop` — orquestrador event-driven que delega a lógica de varredura para `pkg/engine` e traduz eventos.
+- **pkg/scan**: `Ping`, `ReverseDNS`, `GetMAC`, `ScanPorts` — wraerts delegando para `pkg/discovery` e `pkg/ports`.
+- **Tests**: Testes para todos os novos pacotes (`pkg/results`, `pkg/events`, `pkg/profile`, `pkg/export`, `pkg/scan`).
+
+### Changed
+- **pkg/results/HostResult**: Mudou de type alias para `DeviceInfo` para struct independente com campos `Alive`/`OpenPorts` e JSON tags distintas (`alive`/`open_ports`). Código existente que usa `DeviceInfo` não é afetado.
+- **pkg/events/EventType**: Mudou de `int` (iota) para `string` para facilitar serialização nos frontends Wails e TUI.
+
+### Notes
+- `pkg/engine`, `pkg/discovery`, `pkg/ports`, `pkg/exporter`, `pkg/fingerprint`, `pkg/topology`, `pkg/coreerr` preservados sem alteração.
+- Nenhuma dependência externa adicionada — apenas stdlib Go.
+
 ## [0.2.0] - 2026-06-21
 
 ### Added
@@ -122,7 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: `go vet` + `go test -race` no GitHub Actions.
 - CI: `govulncheck` semanal.
 
-[Unreleased]: https://github.com/mendsec/catnet-core/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mendsec/catnet-core/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mendsec/catnet-core/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mendsec/catnet-core/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.2
 [0.1.1]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.1

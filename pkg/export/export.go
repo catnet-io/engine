@@ -1,24 +1,59 @@
 package export
 
 import (
-	"github.com/mendsec/catnet-core/pkg/exporter"
+	"bytes"
+	"encoding/csv"
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/mendsec/catnet-core/pkg/results"
 )
 
 func ExportJSON(devices []results.HostResult) ([]byte, error) {
-	report := results.NewScanReport()
-	report.Devices = make([]results.DeviceInfo, len(devices))
-	for i, d := range devices {
-		report.Devices[i] = results.DeviceInfo(d)
+	out, err := json.MarshalIndent(devices, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode JSON: %w", err)
 	}
-	return exporter.ExportJSON(report)
+	return out, nil
+}
+
+func sanitizeCSVField(field string) string {
+	if len(field) > 0 {
+		fc := field[0]
+		if fc == '=' || fc == '+' || fc == '-' || fc == '@' || fc == '\t' || fc == '\r' {
+			return "'" + field
+		}
+	}
+	return field
 }
 
 func ExportCSV(devices []results.HostResult) ([]byte, error) {
-	report := results.NewScanReport()
-	report.Devices = make([]results.DeviceInfo, len(devices))
-	for i, d := range devices {
-		report.Devices[i] = results.DeviceInfo(d)
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+	if err := writer.Write([]string{"IP", "Hostname", "MAC", "Status", "Open Ports"}); err != nil {
+		return nil, err
 	}
-	return exporter.ExportCSV(report)
+	for _, d := range devices {
+		status := "Dead"
+		if d.Alive {
+			status = "Alive"
+		}
+		var strPorts []string
+		for _, p := range d.OpenPorts {
+			strPorts = append(strPorts, strconv.Itoa(p))
+		}
+		if err := writer.Write([]string{
+			d.IP,
+			sanitizeCSVField(d.Hostname),
+			d.MAC,
+			status,
+			strings.Join(strPorts, ";"),
+		}); err != nil {
+			return nil, err
+		}
+	}
+	writer.Flush()
+	return buf.Bytes(), nil
 }

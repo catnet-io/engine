@@ -22,11 +22,15 @@ Before adopting `catnet-core`, please review our documentation:
 | Package | Public Types & Functions | Description |
 |---|---|---|
 | `pkg/engine` | `ScanConfig`, `DefaultConfig`, `StartScan` | Main scan orchestrator using `context.Context`. |
-| `pkg/results` | `DeviceInfo`, `ScanReport` | Core models used across the ecosystem. |
+| `pkg/results` | `DeviceInfo`, `ScanReport`, `HostResult` | Core models used across the ecosystem. `HostResult` is the canonical type for the event-driven API. |
 | `pkg/targets` | `ParseRange` | Target parsing and CIDR utilities. |
 | `pkg/discovery` | `Ping`, `ReverseDNS`, `GetMAC` | Host liveness and resolution primitives. |
 | `pkg/ports` | `ScanPorts` | Port scanning utilities. |
-| `pkg/exporter` | `ExportJSON`, `ExportXML`, `ExportCSV` | Safe result export functions. JSON is the canonical schema reference format. |
+| `pkg/exporter` | `ExportJSON`, `ExportXML`, `ExportCSV` | Safe result export functions (`DeviceInfo`-based). |
+| `pkg/export` | `ExportJSON`, `ExportCSV` | Export for `[]results.HostResult` with CSV sanitization. |
+| `pkg/events` | `Event`, `EventType`, `HostDiscoveredData`, `ProgressData` | Async event system via Go channel. String-based `EventType` for Wails/TUI serialization. |
+| `pkg/profile` | `ScanProfile`, `DefaultProfile`, `Sanitize` | Scan configuration with concurrency and timeout. |
+| `pkg/scan` | `Engine`, `NewEngine`, `ScanStream`, `Stop`, `Ping`, `ReverseDNS`, `GetMAC`, `ScanPorts` | Event-driven orchestrator. Main entry point for frontends. |
 | `pkg/fingerprint` | `Fingerprint`, `GrabBanners`, `VendorFromMAC` | Heuristic OS/device detection. **Experimental.** |
 | `pkg/topology` | `BuildGraph`, `ExportD3JSON`, `DetectGateway` | Network topology graph builder. **Experimental.** |
 | `pkg/coreerr` | `ErrTimeout`, `ErrCancelled`, `ErrInvalidInput`, ... | Structured error taxonomy for `errors.Is`. |
@@ -86,7 +90,7 @@ func main() {
 
 ## Status
 
-Current version: v0.2.0
+Current version: v0.3.0
 See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Security and CI

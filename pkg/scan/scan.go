@@ -2,15 +2,19 @@ package scan
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"github.com/mendsec/catnet-core/pkg/discovery"
 	"github.com/mendsec/catnet-core/pkg/engine"
 	"github.com/mendsec/catnet-core/pkg/events"
 	"github.com/mendsec/catnet-core/pkg/ports"
 	"github.com/mendsec/catnet-core/pkg/profile"
+	"github.com/mendsec/catnet-core/pkg/results"
 )
 
 type Engine struct {
+	mu     sync.Mutex
 	cancel context.CancelFunc
 }
 
@@ -19,15 +23,29 @@ func NewEngine() *Engine {
 }
 
 func (e *Engine) ScanStream(ctx context.Context, ips []string, cfg profile.ScanProfile, eventChan chan<- events.Event) error {
+	e.mu.Lock()
+	if e.cancel != nil {
+		e.mu.Unlock()
+		return fmt.Errorf("scan already in progress")
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	e.cancel = cancel
+	e.mu.Unlock()
+
+	defer func() {
+		e.mu.Lock()
+		e.cancel = nil
+		e.mu.Unlock()
+		cancel()
+	}()
+
 	scanCfg := engine.ScanConfig{
-		MaxThreads:    cfg.Concurrency,
+		DefaultPorts: cfg.DefaultPorts,
+		MaxThreads:   cfg.Concurrency,
 		PingTimeoutMs: cfg.TimeoutMs,
 		PortTimeoutMs: cfg.TimeoutMs,
 	}
 	scanCfg.Sanitize()
-
-	ctx, cancel := context.WithCancel(ctx)
-	e.cancel = cancel
 
 	onEvent := func(se engine.ScanEvent) {
 		var ev events.Event
@@ -35,13 +53,19 @@ func (e *Engine) ScanStream(ctx context.Context, ips []string, cfg profile.ScanP
 		case engine.EventLifecycleStart:
 			ev = events.Event{Type: events.ScanStarted}
 		case engine.EventResult:
-			host := ""
+			hr := results.HostResult{}
 			if se.Device != nil {
-				host = se.Device.IP
+				hr = results.HostResult{
+					IP:        se.Device.IP,
+					Alive:     se.Device.IsAlive,
+					Hostname:  se.Device.Hostname,
+					MAC:       se.Device.MAC,
+					OpenPorts: se.Device.OpenPorts,
+				}
 			}
 			ev = events.Event{
 				Type: events.HostDiscovered,
-				Data: events.HostDiscoveredData{Host: host},
+				Data: events.HostDiscoveredData{Host: hr},
 			}
 		case engine.EventProgress:
 			ev = events.Event{
@@ -64,6 +88,8 @@ func (e *Engine) ScanStream(ctx context.Context, ips []string, cfg profile.ScanP
 }
 
 func (e *Engine) Stop() {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	if e.cancel != nil {
 		e.cancel()
 	}
