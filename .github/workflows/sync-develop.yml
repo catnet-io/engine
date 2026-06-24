@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      administration: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -20,25 +21,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           MAIN_SHA=$(git rev-parse origin/main)
-          echo "Temporarily allowing force pushes on develop..."
+          echo "Removing branch protection on develop..."
           gh api repos/mendsec/catnet-core/branches/develop/protection \
-            --method PATCH \
-            --field allow_force_pushes=true 2>/dev/null || \
-          gh api repos/mendsec/catnet-core/branches/develop/protection \
-            --method PUT \
-            --field allow_force_pushes=true 2>/dev/null || \
-          echo "Warning: could not update branch protection"
-          echo "Updating develop ref to main ($MAIN_SHA)..."
-          gh api repos/mendsec/catnet-core/git/refs/heads/develop \
-            --method PATCH \
-            --field sha="$MAIN_SHA" \
-            --field force=true
-          echo "Restoring branch protection (force pushes disabled)..."
-          gh api repos/mendsec/catnet-core/branches/develop/protection \
-            --method PATCH \
-            --field allow_force_pushes=false 2>/dev/null || \
-          gh api repos/mendsec/catnet-core/branches/develop/protection \
-            --method PUT \
-            --field allow_force_pushes=false 2>/dev/null || \
-          echo "Warning: could not restore branch protection"
+            --method DELETE || \
+          echo "Warning: could not remove protection"
+          echo "Force-pushing develop to main ($MAIN_SHA)..."
+          git push origin origin/main:refs/heads/develop --force
+          echo "Restoring branch protection on develop..."
+          cat <<'JSON' | gh api repos/mendsec/catnet-core/branches/develop/protection --method PUT --input -
+          {"required_status_checks":null,"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null,"required_linear_history":false,"allow_force_pushes":false,"allow_deletions":false,"block_creations":false,"required_conversation_resolution":false,"lock_branch":false,"allow_fork_syncing":true}
+JSON
           echo "develop synced to main ($MAIN_SHA)"
