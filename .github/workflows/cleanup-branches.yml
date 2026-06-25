@@ -5,12 +5,13 @@ on:
     - cron: '0 0 * * 0' # Run weekly on Sunday at 00:00
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
