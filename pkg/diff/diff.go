@@ -65,6 +65,11 @@ func Compare(oldReport, newReport *results.ScanReport) []HostDiff {
 			continue
 		}
 
+		if oldDev.IsAlive && !newDev.IsAlive {
+			// Handled in the LOST loop
+			continue
+		}
+
 		// Both existed and were alive (or both dead, but usually scans only store alive/attempted)
 		changes := comparePorts(oldDev.OpenPorts, newDev.OpenPorts)
 		if len(changes) > 0 {

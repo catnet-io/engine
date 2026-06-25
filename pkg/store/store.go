@@ -41,7 +41,15 @@ func NewSQLiteStore(dbPath string) (ScanStore, error) {
 		}
 	}
 
-	db, err := sql.Open("sqlite", dbPath)
+	dsn := dbPath
+	if dbPath != ":memory:" {
+		// add pragma if not present
+		dsn = dbPath + "?_pragma=foreign_keys(1)"
+	} else {
+		dsn = ":memory:?_pragma=foreign_keys(1)"
+	}
+
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open sqlite database: %w", err)
 	}

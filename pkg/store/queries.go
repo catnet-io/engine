@@ -10,6 +10,10 @@ import (
 )
 
 func (s *sqliteStore) SaveReport(target string, report *results.ScanReport) (int64, error) {
+	if report == nil {
+		return 0, fmt.Errorf("report cannot be nil")
+	}
+
 	tx, err := s.db.Begin()
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
@@ -75,6 +79,11 @@ func (s *sqliteStore) GetScans() ([]ScanSummary, error) {
 		sm.EndTime = end.Format(time.RFC3339)
 		summaries = append(summaries, sm)
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %w", err)
+	}
+
 	return summaries, nil
 }
 
@@ -124,6 +133,10 @@ func (s *sqliteStore) GetReport(scanID int64) (*results.ScanReport, error) {
 		}
 
 		report.Devices = append(report.Devices, dev)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("device row iteration error: %w", err)
 	}
 
 	return report, nil
