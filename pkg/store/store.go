@@ -41,7 +41,7 @@ func NewSQLiteStore(dbPath string) (ScanStore, error) {
 		}
 	}
 
-	dsn := dbPath
+	var dsn string
 	if dbPath != ":memory:" {
 		// add pragma if not present
 		dsn = dbPath + "?_pragma=foreign_keys(1)"
