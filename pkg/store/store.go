@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mendsec/catnet-core/pkg/results"
 	_ "modernc.org/sqlite"
@@ -35,16 +36,19 @@ type ScanSummary struct {
 
 // NewSQLiteStore initializes a SQLite database at the given path.
 func NewSQLiteStore(dbPath string) (ScanStore, error) {
-	if dbPath != ":memory:" {
-		if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
-			return nil, fmt.Errorf("failed to create db directory: %w", err)
-		}
-	}
-
 	var dsn string
 	if dbPath != ":memory:" {
-		// add pragma if not present
-		dsn = dbPath + "?_pragma=foreign_keys(1)"
+		cleanPath := filepath.Clean(dbPath)
+		if !filepath.IsAbs(cleanPath) {
+			return nil, fmt.Errorf("db path must be absolute: %s", dbPath)
+		}
+		if strings.ContainsAny(cleanPath, "?") {
+			return nil, fmt.Errorf("db path must not contain '?': %s", dbPath)
+		}
+		if err := os.MkdirAll(filepath.Dir(cleanPath), 0700); err != nil {
+			return nil, fmt.Errorf("failed to create db directory: %w", err)
+		}
+		dsn = cleanPath + "?_pragma=foreign_keys(1)"
 	} else {
 		dsn = ":memory:?_pragma=foreign_keys(1)"
 	}

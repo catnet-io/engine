@@ -55,37 +55,39 @@ func Compare(oldReport, newReport *results.ScanReport) []HostDiff {
 			continue
 		}
 
-		if !oldDev.IsAlive && newDev.IsAlive {
+		switch {
+		case !oldDev.IsAlive && newDev.IsAlive:
 			diffs = append(diffs, HostDiff{
 				IP:       ip,
 				Hostname: newDev.Hostname,
 				Status:   StatusNew,
 				Details:  "Host came online (was dead)",
 			})
-			continue
-		}
 
-		if oldDev.IsAlive && !newDev.IsAlive {
-			// Handled in the LOST loop
-			continue
-		}
+		case oldDev.IsAlive && !newDev.IsAlive:
+			// Handled in the LOST loop below
 
-		// Both existed and were alive (or both dead, but usually scans only store alive/attempted)
-		changes := comparePorts(oldDev.OpenPorts, newDev.OpenPorts)
-		if len(changes) > 0 {
-			diffs = append(diffs, HostDiff{
-				IP:       ip,
-				Hostname: newDev.Hostname,
-				Status:   StatusChanged,
-				Details:  strings.Join(changes, "; "),
-			})
-		} else {
-			diffs = append(diffs, HostDiff{
-				IP:       ip,
-				Hostname: newDev.Hostname,
-				Status:   StatusUnchanged,
-				Details:  "No changes",
-			})
+		case !oldDev.IsAlive && !newDev.IsAlive:
+			// Both dead — no meaningful diff to report
+
+		default:
+			// Both alive — compare ports
+			changes := comparePorts(oldDev.OpenPorts, newDev.OpenPorts)
+			if len(changes) > 0 {
+				diffs = append(diffs, HostDiff{
+					IP:       ip,
+					Hostname: newDev.Hostname,
+					Status:   StatusChanged,
+					Details:  strings.Join(changes, "; "),
+				})
+			} else {
+				diffs = append(diffs, HostDiff{
+					IP:       ip,
+					Hostname: newDev.Hostname,
+					Status:   StatusUnchanged,
+					Details:  "No changes",
+				})
+			}
 		}
 	}
 
