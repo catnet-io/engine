@@ -1,8 +1,8 @@
 package diff
 
 import (
-	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/mendsec/catnet-core/pkg/results"
@@ -127,7 +127,7 @@ func comparePorts(oldPorts, newPorts []int) []string {
 	var opened []string
 	for p := range newSet {
 		if !oldSet[p] {
-			opened = append(opened, fmt.Sprintf("%d", p))
+			opened = append(opened, strconv.Itoa(p))
 		}
 	}
 	if len(opened) > 0 {
@@ -137,7 +137,7 @@ func comparePorts(oldPorts, newPorts []int) []string {
 	var closed []string
 	for p := range oldSet {
 		if !newSet[p] {
-			closed = append(closed, fmt.Sprintf("%d", p))
+			closed = append(closed, strconv.Itoa(p))
 		}
 	}
 	if len(closed) > 0 {
