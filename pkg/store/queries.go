@@ -18,8 +18,7 @@ func (s *sqliteStore) SaveReport(target string, report *results.ScanReport) (int
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	//nolint:errcheck
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	res, err := tx.Exec(`
 		INSERT INTO scans (start_time, end_time, target, total_hosts, alive_hosts) 
@@ -151,8 +150,7 @@ func (s *sqliteStore) DeleteScan(scanID int64) error {
 	if err != nil {
 		return err
 	}
-	//nolint:errcheck
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.Exec(`DELETE FROM devices WHERE scan_id = ?`, scanID); err != nil {
 		return err
