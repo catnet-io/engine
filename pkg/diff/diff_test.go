@@ -18,8 +18,8 @@ func TestCompare(t *testing.T) {
 	newReport := &results.ScanReport{
 		Devices: []results.DeviceInfo{
 			{IP: "192.168.1.1", Hostname: "router", IsAlive: true, OpenPorts: []int{80, 443}}, // Unchanged
-			{IP: "192.168.1.10", Hostname: "server", IsAlive: true, OpenPorts: []int{80}},    // Changed: closed 8080, opened 80
-			{IP: "192.168.1.50", Hostname: "new-phone", IsAlive: true, OpenPorts: []int{}},   // New
+			{IP: "192.168.1.10", Hostname: "server", IsAlive: true, OpenPorts: []int{80}},     // Changed: closed 8080, opened 80
+			{IP: "192.168.1.50", Hostname: "new-phone", IsAlive: true, OpenPorts: []int{}},    // New
 		},
 	}
 

@@ -47,7 +47,7 @@ func (s *sqliteStore) SaveReport(target string, report *results.ScanReport) (int
 		if err != nil {
 			return 0, fmt.Errorf("failed to marshal ports: %w", err)
 		}
-		
+
 		_, err = stmt.Exec(scanID, dev.IP, dev.Hostname, dev.MAC, string(portsJSON), dev.IsAlive)
 		if err != nil {
 			return 0, fmt.Errorf("failed to insert device: %w", err)
@@ -91,7 +91,7 @@ func (s *sqliteStore) GetReport(scanID int64) (*results.ScanReport, error) {
 	var start, end time.Time
 	var target string
 	var total, alive int
-	
+
 	err := s.db.QueryRow(`SELECT start_time, end_time, target, total_hosts, alive_hosts FROM scans WHERE id = ?`, scanID).
 		Scan(&start, &end, &target, &total, &alive)
 	if err == sql.ErrNoRows {
@@ -121,13 +121,13 @@ func (s *sqliteStore) GetReport(scanID int64) (*results.ScanReport, error) {
 		if err := rows.Scan(&dev.IP, &dev.Hostname, &dev.MAC, &portsJSON, &dev.IsAlive); err != nil {
 			return nil, fmt.Errorf("failed to scan device: %w", err)
 		}
-		
+
 		if portsJSON != "" && portsJSON != "null" {
 			if err := json.Unmarshal([]byte(portsJSON), &dev.OpenPorts); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal ports: %w", err)
 			}
 		}
-		
+
 		if dev.OpenPorts == nil {
 			dev.OpenPorts = []int{}
 		}
@@ -143,7 +143,7 @@ func (s *sqliteStore) GetReport(scanID int64) (*results.ScanReport, error) {
 }
 
 func (s *sqliteStore) DeleteScan(scanID int64) error {
-	// Devices are deleted automatically due to ON DELETE CASCADE 
+	// Devices are deleted automatically due to ON DELETE CASCADE
 	// Make sure foreign_keys PRAGMA is enabled, but even if not, we can do it manually or just rely on the DB
 	// Let's enable PRAGMA foreign_keys = ON; just in case on init, or manually delete devices here for safety.
 	tx, err := s.db.Begin()
@@ -158,6 +158,6 @@ func (s *sqliteStore) DeleteScan(scanID int64) error {
 	if _, err := tx.Exec(`DELETE FROM scans WHERE id = ?`, scanID); err != nil {
 		return err
 	}
-	
+
 	return tx.Commit()
 }
