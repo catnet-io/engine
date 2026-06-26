@@ -87,8 +87,14 @@ func TestEngineRejectsParallelScan(t *testing.T) {
 	ch1 := make(chan events.Event, 64)
 	ch2 := make(chan events.Event, 64)
 
-	go func() { for range ch1 {} }()
-	go func() { for range ch2 {} }()
+	go func() {
+		for range ch1 {
+		}
+	}()
+	go func() {
+		for range ch2 {
+		}
+	}()
 
 	var firstErr, secondErr error
 	var wg sync.WaitGroup

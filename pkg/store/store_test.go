@@ -51,7 +51,7 @@ func TestStore_SaveAndGet(t *testing.T) {
 	if len(fetched.Devices) != 2 {
 		t.Fatalf("expected 2 devices, got %d", len(fetched.Devices))
 	}
-	
+
 	if fetched.Devices[0].IP != "192.168.1.1" {
 		t.Errorf("expected IP 192.168.1.1, got %s", fetched.Devices[0].IP)
 	}

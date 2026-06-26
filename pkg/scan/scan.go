@@ -40,8 +40,8 @@ func (e *Engine) ScanStream(ctx context.Context, ips []string, cfg profile.ScanP
 	}()
 
 	scanCfg := engine.ScanConfig{
-		DefaultPorts: cfg.DefaultPorts,
-		MaxThreads:   cfg.Concurrency,
+		DefaultPorts:  cfg.DefaultPorts,
+		MaxThreads:    cfg.Concurrency,
 		PingTimeoutMs: cfg.TimeoutMs,
 		PortTimeoutMs: cfg.TimeoutMs,
 	}
