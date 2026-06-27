@@ -42,3 +42,6 @@
 ## 2024-06-23 - [Zero-Allocation Fixed-Length String Formatting]
 **Learning:** Chaining string operations like `strings.ToUpper(strings.ReplaceAll(...))` for fixed-length formats (like 17-character MAC addresses) causes multiple heap allocations per call. In high-volume sequential parsing tasks (like reading `/proc/net/arp`), this creates a measurable garbage collection bottleneck.
 **Action:** When transforming fixed-length strings in hot paths, use a stack-allocated byte array (`var out [17]byte`) and manual byte iteration (e.g. `c - 'a' + 'A'`) to perform conversions without allocating new strings until the final cast. This reduces allocations from multiple to exactly 1 (for the final string) and significantly increases throughput.
+## 2024-06-27 - [Zero-Allocation CSV Port Formatting]
+**Learning:** Using `strings.Join` along with `strconv.Itoa` to format an array of integers (like open ports) inside a tight loop causes multiple memory allocations per item, creating significant overhead in operations like CSV exporting.
+**Action:** Preallocate a byte slice buffer (`var portsBuf []byte`) and use `strconv.AppendInt` to construct the delimited string. Reuse the buffer via `portsBuf = portsBuf[:0]` on each loop iteration. This was extended to `pkg/export` reducing allocations from O(N) to O(1) for the entire list.
