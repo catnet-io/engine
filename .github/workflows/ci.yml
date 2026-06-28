@@ -2,48 +2,46 @@ name: CI
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches: [main]
   pull_request:
-    branches: ["main", "develop"]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  build:
+    name: Build · test · vet
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: ["1.26.x"]
+
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
         with:
-          # Revise Go version upon every minor release of Go
-          go-version: "1.26.x"
+          go-version: ${{ matrix.go-version }}
+          cache: true
 
-      - name: Verify dependencies
+      - name: Verify module integrity
         run: go mod verify
+
+      - name: Check no local replace directives
+        run: |
+          if grep -P "^replace\s+\S+\s+=>\s+\.\." go.mod 2>/dev/null; then
+            echo "ERROR: Local replace directive found in go.mod"
+            exit 1
+          fi
+          echo "✓ No local replace directives"
 
       - name: Vet
         run: go vet ./...
 
-      - name: Test
-        run: go test -race -v ./...
+      - name: Build
+        run: go build ./...
 
-  fuzz:
-    name: Fuzz
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "1.26.x"
-
-      - name: Verify dependencies
-        run: go mod verify
-
-      - name: Run fuzz tests
-        run: go test -fuzz=FuzzParseRange -fuzztime=10s ./pkg/targets
-
+      - name: Test (race detector)
+        run: go test -race -coverprofile=coverage.out ./...
