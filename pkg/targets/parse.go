@@ -6,10 +6,10 @@ import (
 	"net"
 	"strings"
 
-	"github.com/mendsec/catnet-core/pkg/coreerr"
+	"github.com/catnet-io/engine/pkg/coreerr"
 )
 
-// ParseRange interpreta uma string e retorna uma lista de endereços IP correspondentes.
+// ParseRange interpreta uma string e retorna uma lista de endereÃ§os IP correspondentes.
 func ParseRange(input string) ([]string, error) {
 	input = strings.TrimSpace(input)
 	if input == "" {
@@ -33,7 +33,7 @@ func parseCIDR(cidr string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	// ⚡ Bolt Optimization: Pre-allocate slice to prevent dynamic resizing overhead.
+	// âš¡ Bolt Optimization: Pre-allocate slice to prevent dynamic resizing overhead.
 	ones, bits := ipnet.Mask.Size()
 	if bits-ones > 16 {
 		return nil, fmt.Errorf("range too large (max 65536)")
@@ -78,7 +78,7 @@ func parseDashRange(dashStr string) ([]string, error) {
 	if end-start > 65536 {
 		return nil, fmt.Errorf("%w: range too large (max 65536)", coreerr.ErrInvalidInput)
 	}
-	// ⚡ Bolt Optimization: Pre-allocate slice and reuse IP buffer to reduce memory allocations.
+	// âš¡ Bolt Optimization: Pre-allocate slice and reuse IP buffer to reduce memory allocations.
 	capacity := end - start + 1
 	ips := make([]string, 0, capacity)
 	ip := make(net.IP, 4)

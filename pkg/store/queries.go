@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func (s *sqliteStore) SaveReport(target string, report *results.ScanReport) (int64, error) {

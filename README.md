@@ -1,11 +1,11 @@
 # catnet-core
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/mendsec/catnet-core/ci.yml?branch=main&style=flat-square)](https://github.com/mendsec/catnet-core/actions/workflows/ci.yml)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/mendsec/catnet-core?style=flat-square)](https://go.dev/)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mendsec/catnet-core?style=flat-square)](https://goreportcard.com/report/github.com/mendsec/catnet-core)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/catnet-io/engine/ci.yml?branch=main&style=flat-square)](https://github.com/catnet-io/engine/actions/workflows/ci.yml)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/catnet-io/engine?style=flat-square)](https://go.dev/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/catnet-io/engine?style=flat-square)](https://goreportcard.com/report/github.com/catnet-io/engine)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![pkg.go.dev](https://img.shields.io/badge/pkg.go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/mendsec/catnet-core)
-[![Latest Release](https://img.shields.io/github/v/release/mendsec/catnet-core?style=flat-square)](https://github.com/mendsec/catnet-core/releases)
+[![pkg.go.dev](https://img.shields.io/badge/pkg.go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/catnet-io/engine)
+[![Latest Release](https://img.shields.io/github/v/release/catnet-io/engine?style=flat-square)](https://github.com/catnet-io/engine/releases)
 
 Shared Go engine for the CatNet scanning ecosystem.
 
@@ -44,8 +44,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mendsec/catnet-core/pkg/engine"
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/engine"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func main() {
@@ -83,10 +83,10 @@ func main() {
 
 | Repository | Role |
 |---|---|
-| [`catnet-core`](https://github.com/mendsec/catnet-core) | Shared Go engine — no GUI |
-| [`catnet-scanner`](https://github.com/mendsec/catnet-scanner) | Desktop frontend (Raygui) — Planned evolution to Wails + React |
-| [`catnet`](https://github.com/mendsec/catnet) | Scriptable Go CLI |
-| [`catnet-tui`](https://github.com/mendsec/catnet-tui) | Interactive TUI (Go + Bubble Tea) |
+| [`catnet-core`](https://github.com/catnet-io/engine) | Shared Go engine Ã¢â‚¬â€ no GUI |
+| [`app`](https://github.com/catnet-io/app) | Desktop frontend (Raygui) Ã¢â‚¬â€ Planned evolution to Wails + React |
+| [`catnet`](https://github.com/catnet-io/catnet) | Scriptable Go CLI |
+| [`tui`](https://github.com/catnet-io/tui) | Interactive TUI (Go + Bubble Tea) |
 
 ## Status
 

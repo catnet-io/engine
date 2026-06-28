@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mendsec/catnet-core/pkg/events"
-	"github.com/mendsec/catnet-core/pkg/profile"
+	"github.com/catnet-io/engine/pkg/events"
+	"github.com/catnet-io/engine/pkg/profile"
 )
 
 func TestEngineScansAllIPs(t *testing.T) {

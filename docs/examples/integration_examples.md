@@ -15,8 +15,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/mendsec/catnet-core/pkg/engine"
-	"github.com/mendsec/catnet-core/pkg/exporter"
+	"github.com/catnet-io/engine/pkg/engine"
+	"github.com/catnet-io/engine/pkg/exporter"
 )
 
 func main() {
@@ -56,7 +56,7 @@ package tui
 import (
 	"context"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/mendsec/catnet-core/pkg/engine"
+	"github.com/catnet-io/engine/pkg/engine"
 )
 
 type scanMsg engine.ScanEvent
@@ -96,8 +96,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mendsec/catnet-core/pkg/engine"
-	"github.com/mendsec/catnet-core/pkg/topology"
+	"github.com/catnet-io/engine/pkg/engine"
+	"github.com/catnet-io/engine/pkg/topology"
 )
 
 func main() {
@@ -127,7 +127,7 @@ import (
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"github.com/mendsec/catnet-core/pkg/engine"
+	"github.com/catnet-io/engine/pkg/engine"
 )
 
 type App struct {

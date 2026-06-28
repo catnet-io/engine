@@ -1,7 +1,7 @@
 package topology
 
 import (
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 // BuildGraph creates an adjacency graph from scan report.
@@ -72,7 +72,7 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 		}
 
 		// Find /24 subnet
-		// ⚡ Bolt Optimization: Use zero-allocation counting and slicing
+		// âš¡ Bolt Optimization: Use zero-allocation counting and slicing
 		// Avoids massive allocation overhead and ensures exactly 3 dots (valid IPv4)
 		dots := 0
 		thirdDotIdx := -1
@@ -126,7 +126,7 @@ func BuildGraph(report *results.ScanReport) *TopologyGraph {
 						if src > dst {
 							src, dst = dst, src
 						}
-						// ⚡ Bolt Optimization: Use zero-allocation struct key instead of string concatenation.
+						// âš¡ Bolt Optimization: Use zero-allocation struct key instead of string concatenation.
 						// This prevents massive memory allocation and GC overhead in dense O(N^2) graphs.
 						key := edgeKey{src, dst}
 						if _, exists := addedHostEdges[key]; !exists {

@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docs**: `api-stability.md` lists `pkg/coreerr` as stable.
 
 ### Changed
-- **BREAKING CHANGE**: `GrabBanners` signature changed — now accepts `BannerGrabConfig` as last parameter.
+- **BREAKING CHANGE**: `GrabBanners` signature changed â€” now accepts `BannerGrabConfig` as last parameter.
 - **BREAKING CHANGE**: `Fingerprint` delegates to `FingerprintWithConfig` with default config.
 - **Engine `StartScan`**: Unified alive/dead host paths into a single goroutine per IP, eliminating the nested goroutine for alive hosts. This fixes a race condition in `report.Devices` ordering and ensures `EventLifecycleCancel` is always the last event emitted. Port scan + fingerprint now run sequentially in the same worker goroutine.
 - **Export CSV/XML**: Added `OS`, `DeviceType`, `Vendor` columns/fields. `OSFamily` omitted by design (redundant with `OS`).
@@ -37,32 +37,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-06-24
 
 ### Added
-- **pkg/results**: `HostResult` — tipo canônico de domínio com `Alive` e `OpenPorts` e JSON tags `alive`/`open_ports`. Substitui `DeviceInfo` como formato de intercâmbio para a API event-driven.
-- **pkg/results**: `HostResult.ToDeviceInfo()` — conversão para compatibilidade com `DeviceInfo`.
-- **pkg/profile**: `ScanProfile`, `DefaultProfile`, `Sanitize` — configuração de varredura com `DefaultPorts`, `Concurrency`, `TimeoutMs` e JSON tags.
-- **pkg/events**: `Event`, `EventType` (string-based), `HostDiscoveredData`, `ProgressData` — sistema de eventos assíncrono via channel.
-- **pkg/export**: `ExportJSON`, `ExportCSV` para `[]results.HostResult` com sanitização CSV.
-- **pkg/scan**: `Engine`, `NewEngine`, `ScanStream`, `Stop` — orquestrador event-driven que delega a lógica de varredura para `pkg/engine` e traduz eventos.
-- **pkg/scan**: `Ping`, `ReverseDNS`, `GetMAC`, `ScanPorts` — wraerts delegando para `pkg/discovery` e `pkg/ports`.
+- **pkg/results**: `HostResult` â€” tipo canÃ´nico de domÃ­nio com `Alive` e `OpenPorts` e JSON tags `alive`/`open_ports`. Substitui `DeviceInfo` como formato de intercÃ¢mbio para a API event-driven.
+- **pkg/results**: `HostResult.ToDeviceInfo()` â€” conversÃ£o para compatibilidade com `DeviceInfo`.
+- **pkg/profile**: `ScanProfile`, `DefaultProfile`, `Sanitize` â€” configuraÃ§Ã£o de varredura com `DefaultPorts`, `Concurrency`, `TimeoutMs` e JSON tags.
+- **pkg/events**: `Event`, `EventType` (string-based), `HostDiscoveredData`, `ProgressData` â€” sistema de eventos assÃ­ncrono via channel.
+- **pkg/export**: `ExportJSON`, `ExportCSV` para `[]results.HostResult` com sanitizaÃ§Ã£o CSV.
+- **pkg/scan**: `Engine`, `NewEngine`, `ScanStream`, `Stop` â€” orquestrador event-driven que delega a lÃ³gica de varredura para `pkg/engine` e traduz eventos.
+- **pkg/scan**: `Ping`, `ReverseDNS`, `GetMAC`, `ScanPorts` â€” wraerts delegando para `pkg/discovery` e `pkg/ports`.
 - **Tests**: Testes para todos os novos pacotes (`pkg/results`, `pkg/events`, `pkg/profile`, `pkg/export`, `pkg/scan`).
 
 ### Changed
-- **pkg/results/HostResult**: Mudou de type alias para `DeviceInfo` para struct independente com campos `Alive`/`OpenPorts` e JSON tags distintas (`alive`/`open_ports`). Código existente que usa `DeviceInfo` não é afetado.
-- **pkg/events/EventType**: Mudou de `int` (iota) para `string` para facilitar serialização nos frontends Wails e TUI.
+- **pkg/results/HostResult**: Mudou de type alias para `DeviceInfo` para struct independente com campos `Alive`/`OpenPorts` e JSON tags distintas (`alive`/`open_ports`). CÃ³digo existente que usa `DeviceInfo` nÃ£o Ã© afetado.
+- **pkg/events/EventType**: Mudou de `int` (iota) para `string` para facilitar serializaÃ§Ã£o nos frontends Wails e TUI.
 
 ### Notes
-- `pkg/engine`, `pkg/discovery`, `pkg/ports`, `pkg/exporter`, `pkg/fingerprint`, `pkg/topology`, `pkg/coreerr` preservados sem alteração.
-- Nenhuma dependência externa adicionada — apenas stdlib Go.
+- `pkg/engine`, `pkg/discovery`, `pkg/ports`, `pkg/exporter`, `pkg/fingerprint`, `pkg/topology`, `pkg/coreerr` preservados sem alteraÃ§Ã£o.
+- Nenhuma dependÃªncia externa adicionada â€” apenas stdlib Go.
 
 ## [0.2.0] - 2026-06-21
 
 ### Added
-- `FingerprintProvider` interface injetável em `ScanConfig`.
+- `FingerprintProvider` interface injetÃ¡vel em `ScanConfig`.
 - `ScanPorts` refatorada para retornar `<-chan int` (canal desacopla port scan do worker).
-- `parseProcNetArp` extraída como função testável.
+- `parseProcNetArp` extraÃ­da como funÃ§Ã£o testÃ¡vel.
 - `sanitizeBanner` para output seguro de banners.
 - `ExportCSV` otimizada com `strconv.AppendInt` + reuse de slice.
-- `maxEdgesPerSubnet = 200` em topology para limitar explosão O(N²).
+- `maxEdgesPerSubnet = 200` em topology para limitar explosÃ£o O(NÂ²).
 - **Topology Graph Support** (`pkg/topology/`): Complete network topology graph builder with gateway identification, device clustering by subnet, and graph export capabilities.
 - **OS/Device Fingerprinting Enhancements**:
   - OUI (Organizationally Unique Identifier) module with zero-allocation lookup for MAC vendor identification.
@@ -76,15 +76,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fuzz testing CI workflow for automatic fuzzing on pull requests.
   - Govulncheck PR workflow for automated vulnerability scanning.
   - GPG-signed commit workflow for supply chain security.
-  - Automated develop→main merge workflow with GPG signing.
+  - Automated developâ†’main merge workflow with GPG signing.
 
 ### Changed
-- **BREAKING CHANGE**: `ScanPorts` não retorna mais `[]int` — retorna `<-chan int`. Consumidores de `pkg/ports` diretamente (fora do engine) precisam ler do canal.
+- **BREAKING CHANGE**: `ScanPorts` nÃ£o retorna mais `[]int` â€” retorna `<-chan int`. Consumidores de `pkg/ports` diretamente (fora do engine) precisam ler do canal.
 - **Performance Optimizations (Zero-Allocation Patterns)**:
-  - ⚡ ARP table parsing in MAC discovery now uses zero-allocation parsing.
-  - ⚡ VendorFromMAC lookup optimized for minimal memory allocations with dedicated benchmarks.
-  - ⚡ Subnet extraction (`/24`) in topology builder uses zero-allocation string slicing.
-  - ⚡ Topology graph edge keys replaced with zero-allocation struct keys, eliminating string concatenation overhead.
+  - âš¡ ARP table parsing in MAC discovery now uses zero-allocation parsing.
+  - âš¡ VendorFromMAC lookup optimized for minimal memory allocations with dedicated benchmarks.
+  - âš¡ Subnet extraction (`/24`) in topology builder uses zero-allocation string slicing.
+  - âš¡ Topology graph edge keys replaced with zero-allocation struct keys, eliminating string concatenation overhead.
 - **Port Scanner Improvements**: Enhanced port scanning logic with better concurrency handling and timeout calculations.
 - **CI Workflow Updates**: Refactored CI workflows for better separation of concerns and improved maintainability.
 - **Dependency Updates**:
@@ -138,13 +138,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pkg/scanner`: `ParseRange` com suporte a CIDR e dash range.
 - `pkg/scanner`: `StartScan`, `StopScan` com goroutines e cancelamento por context.
 - `pkg/scanner`: build tags separados para Windows (`SendARP`) e POSIX (`arp`).
-- `pkg/exporter`: `ExportJSON`, `ExportCSV`, `ExportXML` com sanitização de injeção CSV.
+- `pkg/exporter`: `ExportJSON`, `ExportCSV`, `ExportXML` com sanitizaÃ§Ã£o de injeÃ§Ã£o CSV.
 - CI: `go vet` + `go test -race` no GitHub Actions.
 - CI: `govulncheck` semanal.
 
-[Unreleased]: https://github.com/mendsec/catnet-core/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/mendsec/catnet-core/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/mendsec/catnet-core/compare/v0.1.2...v0.2.0
-[0.1.2]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.2
-[0.1.1]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.1
-[0.1.0]: https://github.com/mendsec/catnet-core/releases/tag/v0.1.0
+[Unreleased]: https://github.com/catnet-io/engine/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/catnet-io/engine/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/catnet-io/engine/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/catnet-io/engine/releases/tag/v0.1.2
+[0.1.1]: https://github.com/catnet-io/engine/releases/tag/v0.1.1
+[0.1.0]: https://github.com/catnet-io/engine/releases/tag/v0.1.0

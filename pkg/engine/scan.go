@@ -8,14 +8,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mendsec/catnet-core/pkg/coreerr"
-	"github.com/mendsec/catnet-core/pkg/discovery"
-	"github.com/mendsec/catnet-core/pkg/fingerprint"
-	"github.com/mendsec/catnet-core/pkg/ports"
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/coreerr"
+	"github.com/catnet-io/engine/pkg/discovery"
+	"github.com/catnet-io/engine/pkg/fingerprint"
+	"github.com/catnet-io/engine/pkg/ports"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
-// StartScan inicia uma varredura de rede concorrente e retorna um relatório completo.
+// StartScan inicia uma varredura de rede concorrente e retorna um relatÃ³rio completo.
 func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventCallback) (*results.ScanReport, error) {
 	// Defensively enforce safe limits regardless of consumer input
 	cfg.Sanitize()
@@ -60,7 +60,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 			maxTimePerHost += time.Duration(portBatches) * time.Duration(cfg.PortTimeoutMs) * time.Millisecond
 		}
 		maxDuration := time.Duration(total) * maxTimePerHost / time.Duration(threads)
-		maxDuration += time.Minute // Buffer de segurança
+		maxDuration += time.Minute // Buffer de seguranÃ§a
 		// Limite fixo absoluto de 2 horas
 		if maxDuration > 2*time.Hour {
 			maxDuration = 2 * time.Hour
@@ -74,7 +74,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 
 	var processed int32
 	var mu sync.Mutex
-	// ⚡ Bolt Optimization: Replace channel distribution with a lock-free atomic index counter.
+	// âš¡ Bolt Optimization: Replace channel distribution with a lock-free atomic index counter.
 	// Bypasses the O(N) allocation of pushing all IPs into a buffered channel upfront,
 	// achieving ~3x faster work distribution to threads.
 	var index int32 = -1

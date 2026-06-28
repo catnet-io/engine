@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mendsec/catnet-core/pkg/coreerr"
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/coreerr"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func TestScanConcurrency(t *testing.T) {

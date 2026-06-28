@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func ExportJSON(devices []results.HostResult) ([]byte, error) {

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mendsec/catnet-core/pkg/engine"
-	"github.com/mendsec/catnet-core/pkg/exporter"
-	"github.com/mendsec/catnet-core/pkg/results"
-	"github.com/mendsec/catnet-core/pkg/targets"
+	"github.com/catnet-io/engine/pkg/engine"
+	"github.com/catnet-io/engine/pkg/exporter"
+	"github.com/catnet-io/engine/pkg/results"
+	"github.com/catnet-io/engine/pkg/targets"
 )
 
 func TestEndToEndScanAndExport(t *testing.T) {

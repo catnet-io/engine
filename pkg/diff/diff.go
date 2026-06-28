@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 type HostStatus string
@@ -68,10 +68,10 @@ func Compare(oldReport, newReport *results.ScanReport) []HostDiff {
 			// Handled in the LOST loop below
 
 		case !oldDev.IsAlive && !newDev.IsAlive:
-			// Both dead — no meaningful diff to report
+			// Both dead â€” no meaningful diff to report
 
 		default:
-			// Both alive — compare ports
+			// Both alive â€” compare ports
 			changes := comparePorts(oldDev.OpenPorts, newDev.OpenPorts)
 			if len(changes) > 0 {
 				diffs = append(diffs, HostDiff{

@@ -1,6 +1,6 @@
 package events
 
-import "github.com/mendsec/catnet-core/pkg/results"
+import "github.com/catnet-io/engine/pkg/results"
 
 type EventType string
 

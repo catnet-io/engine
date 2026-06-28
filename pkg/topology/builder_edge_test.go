@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func TestBuildGraph_EdgeLimit(t *testing.T) {

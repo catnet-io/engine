@@ -3,7 +3,7 @@ package events
 import (
 	"testing"
 
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func TestEventTypeValues(t *testing.T) {

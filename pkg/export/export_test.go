@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func TestExportJSON(t *testing.T) {

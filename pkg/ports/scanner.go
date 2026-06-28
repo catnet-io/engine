@@ -8,14 +8,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mendsec/catnet-core/internal/netutil"
+	"github.com/catnet-io/engine/internal/netutil"
 )
 
-// ScanConcurrency define o número máximo de conexões TCP simultâneas por IP.
+// ScanConcurrency define o nÃºmero mÃ¡ximo de conexÃµes TCP simultÃ¢neas por IP.
 const ScanConcurrency = 10
 
 // ScanPorts varre uma lista de portas em um IP concorrentemente e retorna os resultados via canal.
-// O canal é fechado automaticamente quando todas as portas foram testadas.
+// O canal Ã© fechado automaticamente quando todas as portas foram testadas.
 func ScanPorts(ctx context.Context, ip string, ports []int, timeoutMs int) <-chan int {
 	out := make(chan int, len(ports))
 	if err := netutil.ValidateIPv4(ip); err != nil {

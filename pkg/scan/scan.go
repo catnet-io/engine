@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/mendsec/catnet-core/pkg/discovery"
-	"github.com/mendsec/catnet-core/pkg/engine"
-	"github.com/mendsec/catnet-core/pkg/events"
-	"github.com/mendsec/catnet-core/pkg/ports"
-	"github.com/mendsec/catnet-core/pkg/profile"
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/discovery"
+	"github.com/catnet-io/engine/pkg/engine"
+	"github.com/catnet-io/engine/pkg/events"
+	"github.com/catnet-io/engine/pkg/ports"
+	"github.com/catnet-io/engine/pkg/profile"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 type Engine struct {

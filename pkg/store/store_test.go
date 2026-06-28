@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/results"
 )
 
 func TestStore_SaveAndGet(t *testing.T) {

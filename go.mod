@@ -1,4 +1,4 @@
-module github.com/mendsec/catnet-core
+module github.com/catnet-io/engine
 
 go 1.26.0
 

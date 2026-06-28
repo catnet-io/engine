@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/mendsec/catnet-core/pkg/coreerr"
-	"github.com/mendsec/catnet-core/pkg/results"
+	"github.com/catnet-io/engine/pkg/coreerr"
+	"github.com/catnet-io/engine/pkg/results"
 	"strconv"
 	"strings"
 )
@@ -22,8 +22,8 @@ func ExportJSON(report *results.ScanReport) ([]byte, error) {
 }
 
 // ExportXML exporta resultados para formato XML.
-// Os campos incluídos por dispositivo: IP, Hostname, MAC, Status, OS, DeviceType, Vendor, Open Ports.
-// OSFamily é omitido por redundância com OS.
+// Os campos incluÃ­dos por dispositivo: IP, Hostname, MAC, Status, OS, DeviceType, Vendor, Open Ports.
+// OSFamily Ã© omitido por redundÃ¢ncia com OS.
 func ExportXML(report *results.ScanReport) ([]byte, error) {
 	type XMLDevice struct {
 		IP         string `xml:"ip"`
@@ -56,7 +56,7 @@ func ExportXML(report *results.ScanReport) ([]byte, error) {
 	return append([]byte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"), out...), nil
 }
 
-// sanitizeCSVField limpa caracteres perigosos para prevenção de injeção CSV.
+// sanitizeCSVField limpa caracteres perigosos para prevenÃ§Ã£o de injeÃ§Ã£o CSV.
 func sanitizeCSVField(field string) string {
 	field = strings.ReplaceAll(field, "\n", " ")
 	field = strings.ReplaceAll(field, "\r", " ")
@@ -74,8 +74,8 @@ func sanitizeCSVField(field string) string {
 }
 
 // ExportCSV exporta resultados para formato CSV.
-// Os campos incluídos por dispositivo: IP, Hostname, MAC, Status, OS, DeviceType, Vendor, Open Ports.
-// OSFamily é omitido por redundância com OS.
+// Os campos incluÃ­dos por dispositivo: IP, Hostname, MAC, Status, OS, DeviceType, Vendor, Open Ports.
+// OSFamily Ã© omitido por redundÃ¢ncia com OS.
 func ExportCSV(report *results.ScanReport) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
@@ -83,7 +83,7 @@ func ExportCSV(report *results.ScanReport) ([]byte, error) {
 		return nil, fmt.Errorf("%w: failed to write CSV header: %v", coreerr.ErrExport, err)
 	}
 
-	// ⚡ Bolt Optimization: Reuse string slice and avoid strings.Join overhead
+	// âš¡ Bolt Optimization: Reuse string slice and avoid strings.Join overhead
 	// This reduces allocations per device from ~6 to 1 and speeds up CSV generation
 	row := make([]string, 8)
 	var portsBuf []byte
