@@ -83,8 +83,8 @@ func main() {
 
 | Repository | Role |
 |---|---|
-| [`catnet-core`](https://github.com/catnet-io/engine) | Shared Go engine Ã¢â‚¬â€ no GUI |
-| [`app`](https://github.com/catnet-io/app) | Desktop frontend (Raygui) Ã¢â‚¬â€ Planned evolution to Wails + React |
+| [`catnet-core`](https://github.com/catnet-io/engine) | Shared Go engine ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no GUI |
+| [`app`](https://github.com/catnet-io/app) | Desktop frontend (Raygui) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Planned evolution to Wails + React |
 | [`catnet`](https://github.com/catnet-io/catnet) | Scriptable Go CLI |
 | [`tui`](https://github.com/catnet-io/tui) | Interactive TUI (Go + Bubble Tea) |
 
@@ -109,3 +109,13 @@ This repository follows DevSecOps practices by integrating quality and security 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+## Part of the CatNet ecosystem
+
+| | Repository | Role |
+|---|---|---|
+| ⚙️ | [catnet-io/engine](https://github.com/catnet-io/engine) | Shared Go scanning engine |
+| 💻 | [catnet-io/catnet](https://github.com/catnet-io/catnet) | CLI |
+| 🖥️ | [catnet-io/app](https://github.com/catnet-io/app) | Desktop app |
+| 📟 | [catnet-io/tui](https://github.com/catnet-io/tui) | Terminal UI |
