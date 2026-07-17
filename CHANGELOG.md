@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-07-16
+
+### Removed
+- **Engine**: Removed `pkg/store` and `pkg/diff` from engine repository (moved to consumers to keep engine light and free of database dependencies).
+
 ## [0.5.0] - 2026-07-16
 
 ### Added

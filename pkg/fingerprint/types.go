@@ -17,6 +17,9 @@ type BannerGrabConfig struct {
 	// AggressiveSMB sends an SMB negotiate request to port 445.
 	// This is an active probe that may trigger IDS/IPS alerts. Default: false.
 	AggressiveSMB bool
+	// Concurrency limits simultaneous banner grab connections.
+	// Default: BannerConcurrency (5).
+	Concurrency int
 }
 
 const BannerConcurrency = 5
