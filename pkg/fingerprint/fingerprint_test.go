@@ -71,3 +71,16 @@ func TestFingerprint(t *testing.T) {
 		t.Errorf("expected vendor Raspberry Pi, got %s", res.Vendor)
 	}
 }
+
+func TestFingerprintWithConfig(t *testing.T) {
+	ctx := context.Background()
+	cfg := BannerGrabConfig{
+		AggressiveSMB: true,
+		Concurrency:   10,
+	}
+	res := FingerprintWithConfig(ctx, "127.0.0.1", "", 64, []int{445}, 100, cfg)
+	if res.OSFamily == "" {
+		t.Error("expected non-empty result family")
+	}
+}
+

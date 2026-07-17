@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-16
+
 ### Added
 - **Fingerprint**: `BannerGrabConfig.AggressiveSMB` allows opt-in SMB negotiate probe (off by default).
 - **Fingerprint**: `FingerprintWithConfig` accepts `BannerGrabConfig` for fine-grained control.
@@ -20,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docs**: `api-stability.md` lists `pkg/coreerr` as stable.
 
 ### Changed
-- **BREAKING CHANGE**: `GrabBanners` signature changed â€” now accepts `BannerGrabConfig` as last parameter.
+- **BREAKING CHANGE**: `GrabBanners` signature changed — now accepts `BannerGrabConfig` as last parameter.
 - **BREAKING CHANGE**: `Fingerprint` delegates to `FingerprintWithConfig` with default config.
 - **Engine `StartScan`**: Unified alive/dead host paths into a single goroutine per IP, eliminating the nested goroutine for alive hosts. This fixes a race condition in `report.Devices` ordering and ensures `EventLifecycleCancel` is always the last event emitted. Port scan + fingerprint now run sequentially in the same worker goroutine.
 - **Export CSV/XML**: Added `OS`, `DeviceType`, `Vendor` columns/fields. `OSFamily` omitted by design (redundant with `OS`).

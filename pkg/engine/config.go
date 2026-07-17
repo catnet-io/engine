@@ -2,32 +2,32 @@ package engine
 
 import "context"
 
-// ScanConfig define os parâmetros de uma varredura.
+// ScanConfig defines the parameters of a scan.
 type ScanConfig struct {
-	// DefaultPorts é a lista de portas TCP escaneadas em cada host vivo.
-	// Padrão: [22 (SSH), 80 (HTTP), 443 (HTTPS), 139 (NetBIOS), 445 (SMB), 3389 (RDP)].
+	// DefaultPorts is the list of TCP ports scanned on each alive host.
+	// Default: [22 (SSH), 80 (HTTP), 443 (HTTPS), 139 (NetBIOS), 445 (SMB), 3389 (RDP)].
 	DefaultPorts []int `json:"defaultPorts"`
 
-	// PortTimeoutMs é o timeout em milissegundos para cada tentativa de conexão TCP.
-	// Padrão: 500ms. Limite: 1–10000ms (Sanitize clampeia valores fora do range).
+	// PortTimeoutMs is the timeout in milliseconds for each TCP connection attempt.
+	// Default: 500ms. Range: 1–10000ms (Sanitize clamps values out of range).
 	PortTimeoutMs int `json:"portTimeoutMs"`
 
-	// PingTimeoutMs é o timeout em milissegundos para o ping ICMP de liveness.
-	// Padrão: 1000ms. Limite: 1–10000ms.
+	// PingTimeoutMs is the timeout in milliseconds for the liveness ICMP ping.
+	// Default: 1000ms. Range: 1–10000ms.
 	PingTimeoutMs int `json:"pingTimeoutMs"`
 
-	// MaxThreads define o nível de paralelismo da varredura (goroutines simultâneas).
-	// Padrão: 64. Limite máximo absoluto: 256 (imposto pelo engine em StartScan).
-	// Valores acima de 256 ou abaixo de 1 são silenciosamente clampeados para 16.
+	// MaxThreads defines the scan concurrency level (simultaneous goroutines).
+	// Default: 64. Absolute maximum limit: 256 (enforced by engine in StartScan).
+	// Values above 256 or below 1 are silently clamped to 16.
 	MaxThreads int `json:"maxThreads"`
 
-	// FingerprintProvider permite injetar lógica customizada de fingerprinting.
-	// Se nil, o motor usa pkg/fingerprint com heurísticas padrão de TTL, banner e OUI.
-	// Útil para testes (mock) ou extensão de capacidades de detecção.
+	// FingerprintProvider allows injecting custom fingerprinting logic.
+	// If nil, the engine uses pkg/fingerprint with default TTL, banner, and OUI heuristics.
+	// Useful for testing (mocking) or extending detection capabilities.
 	FingerprintProvider FingerprintProvider `json:"-"`
 }
 
-// FingerprintData contém os resultados da detecção.
+// FingerprintData contains the detection results.
 type FingerprintData struct {
 	OS         string
 	OSFamily   string
@@ -35,25 +35,25 @@ type FingerprintData struct {
 	Vendor     string
 }
 
-// FingerprintProvider define o contrato para heurísticas de detecção de SO e dispositivos.
+// FingerprintProvider defines the contract for OS and device detection heuristics.
 type FingerprintProvider interface {
 	Fingerprint(ctx context.Context, ip, mac string, ttl int, ports []int, timeoutMs int) FingerprintData
 }
 
-// DefaultConfig retorna uma ScanConfig com valores padrão conservadores.
+// DefaultConfig returns a ScanConfig with conservative default values.
 func DefaultConfig() ScanConfig {
 	return ScanConfig{
 		DefaultPorts:        []int{22, 80, 443, 139, 445, 3389},
 		PortTimeoutMs:       500,
 		PingTimeoutMs:       1000,
 		MaxThreads:          64,
-		FingerprintProvider: nil, // Usará default em StartScan se nulo
+		FingerprintProvider: nil, // Will use default in StartScan if nil
 	}
 }
 
-// Sanitize corrige valores fora de limites seguros.
-// O próprio motor executa essa sanitização defensivamente no StartScan,
-// mas pode ser invocada manualmente para refletir os limites na interface do cliente.
+// Sanitize corrects values outside safe limits.
+// The engine itself executes this sanitization defensively during StartScan,
+// but it can be invoked manually to reflect limits in client interfaces.
 func (c *ScanConfig) Sanitize() {
 	if c.MaxThreads <= 0 || c.MaxThreads > 256 {
 		c.MaxThreads = 16
@@ -65,3 +65,4 @@ func (c *ScanConfig) Sanitize() {
 		c.PingTimeoutMs = 1000
 	}
 }
+
