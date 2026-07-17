@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-16
+
+### Added
+- **Engine**: Asynchronous event dispatcher (`asyncDispatcher`) with 512-event buffer to decouple scan workers from slow callback executions.
+- **Engine**: `TestSlowCallbackDoesNotStallWorkers` and `TestNoGoroutineLeakOnPrematureCancel` tests.
+- **Docs**: API stability and scan lifecycle events contract updates.
+
+### Deprecated
+- **Engine**: `pkg/engine.StartScan` deprecated in favor of `pkg/scan.Engine.ScanStream`.
+
 ## [0.4.0] - 2026-07-16
 
 ### Added

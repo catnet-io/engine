@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -251,5 +252,76 @@ func TestStartScanDefensiveTimeout(t *testing.T) {
 	// But we just want to ensure it doesn't crash or create an incorrectly small timeout that fails the scan immediately.
 	if duration > 5*time.Second {
 		t.Errorf("Scan took too long, might be stuck")
+	}
+}
+
+func TestSlowCallbackDoesNotStallWorkers(t *testing.T) {
+	ips := make([]string, 50)
+	for i := range ips {
+		ips[i] = "127.0.0.1"
+	}
+
+	cfg := DefaultConfig()
+	cfg.MaxThreads = 16
+	cfg.PingTimeoutMs = 50
+	cfg.PortTimeoutMs = 50
+	cfg.DefaultPorts = []int{}
+
+	callbackDelay := 5 * time.Millisecond
+	start := time.Now()
+
+	_, _ = StartScan(context.Background(), ips, cfg, func(ev ScanEvent) {
+		if ev.Type == EventResult {
+			time.Sleep(callbackDelay) // simulate slow UI render
+		}
+	})
+
+	elapsed := time.Since(start)
+
+	// With async dispatch, scan should complete significantly faster
+	// than 50 hosts × 20ms callback delay = 1000ms if workers were stalled sequentially.
+	// 50 hosts * 5ms = 250ms.
+	maxAllowed := 800 * time.Millisecond
+	if elapsed > maxAllowed {
+		t.Errorf("slow callback stalled workers: elapsed %v > %v", elapsed, maxAllowed)
+	}
+}
+
+func TestNoGoroutineLeakOnPrematureCancel(t *testing.T) {
+	before := runtime.NumGoroutine()
+
+	ips := make([]string, 100)
+	for i := range ips {
+		ips[i] = "10.0.0." + itoa(i+1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	var processed int32
+	go func() {
+		for atomic.LoadInt32(&processed) < 10 {
+			time.Sleep(time.Millisecond)
+		}
+		cancel() // cancel after 10 hosts processed
+	}()
+
+	cfg := DefaultConfig()
+	cfg.DefaultPorts = []int{}
+	cfg.PingTimeoutMs = 50
+
+	_, _ = StartScan(ctx, ips, cfg, func(ev ScanEvent) {
+		if ev.Type == EventResult {
+			atomic.AddInt32(&processed, 1)
+		}
+	})
+
+	// Allow goroutines to settle
+	time.Sleep(100 * time.Millisecond)
+	runtime.GC()
+
+	after := runtime.NumGoroutine()
+	leak := after - before
+	if leak > 2 { // tolerance for test harness goroutines
+		t.Errorf("goroutine leak detected: %d goroutines created and not cleaned up", leak)
 	}
 }
