@@ -15,7 +15,7 @@ import (
 	"github.com/catnet-io/engine/pkg/results"
 )
 
-// StartScan inicia uma varredura de rede concorrente e retorna um relatÃ³rio completo.
+// StartScan initiates a concurrent network scan and returns a complete report.
 func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventCallback) (*results.ScanReport, error) {
 	// Defensively enforce safe limits regardless of consumer input
 	cfg.Sanitize()
@@ -52,16 +52,16 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 		threads = maxAllowedThreads
 	}
 	if _, ok := ctx.Deadline(); !ok {
-		// Calcula timeout defensivo:
-		// Assumindo port scan concorrente com ports.ScanConcurrency workers
+		// Calculate defensive timeout:
+		// Assuming concurrent port scan with ports.ScanConcurrency workers
 		maxTimePerHost := time.Duration(cfg.PingTimeoutMs) * time.Millisecond
 		if len(cfg.DefaultPorts) > 0 {
 			portBatches := (len(cfg.DefaultPorts) + ports.ScanConcurrency - 1) / ports.ScanConcurrency
 			maxTimePerHost += time.Duration(portBatches) * time.Duration(cfg.PortTimeoutMs) * time.Millisecond
 		}
 		maxDuration := time.Duration(total) * maxTimePerHost / time.Duration(threads)
-		maxDuration += time.Minute // Buffer de seguranÃ§a
-		// Limite fixo absoluto de 2 horas
+		maxDuration += time.Minute // Safety buffer
+		// Absolute fixed limit of 2 hours
 		if maxDuration > 2*time.Hour {
 			maxDuration = 2 * time.Hour
 		}

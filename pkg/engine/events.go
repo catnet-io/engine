@@ -2,7 +2,7 @@ package engine
 
 import "github.com/catnet-io/engine/pkg/results"
 
-// ScanEventType define o tipo do evento disparado durante a varredura.
+// ScanEventType defines the type of event fired during a scan.
 type ScanEventType int
 
 const (
@@ -14,7 +14,7 @@ const (
 	EventProgress
 )
 
-// ScanEvent Ã© a estrutura que engloba dados de evento, amigÃ¡vel para callbacks sÃ­ncronos e FFI.
+// ScanEvent holds the event data, suitable for synchronous callbacks and FFI.
 type ScanEvent struct {
 	Type     ScanEventType
 	Device   *results.DeviceInfo
@@ -22,5 +22,5 @@ type ScanEvent struct {
 	Message  string
 }
 
-// EventCallback Ã© a assinatura da funÃ§Ã£o de callback sÃ­ncrono.
+// EventCallback is the signature of the synchronous callback function.
 type EventCallback func(event ScanEvent)
