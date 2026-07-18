@@ -63,6 +63,7 @@ func TestEndToEndScanAndExport(t *testing.T) {
 	var startEventReceived, completeEventReceived bool
 	var resultsReceived int
 
+	//nolint:SA1019 // integration test tests the deprecated engine.StartScan API
 	report, err := engine.StartScan(ctx, allIPs, cfg, func(event engine.ScanEvent) {
 		mu.Lock()
 		defer mu.Unlock()
