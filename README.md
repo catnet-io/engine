@@ -1,6 +1,6 @@
 # catnet-io/engine
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/catnet-io/engine/ci.yml?branch=main&style=flat-square)](https://github.com/catnet-io/engine/actions/workflows/ci.yml)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/catnet-io/engine/ci.yml?branch=develop&style=flat-square)](https://github.com/catnet-io/engine/actions/workflows/ci.yml)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/catnet-io/engine?style=flat-square)](https://go.dev/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/catnet-io/engine?style=flat-square)](https://goreportcard.com/report/github.com/catnet-io/engine)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
