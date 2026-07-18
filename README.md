@@ -103,6 +103,7 @@ This repository follows DevSecOps practices by integrating quality and security 
 - linting via `golangci-lint`
 - vulnerability scanning with `govulncheck`
 - dependency updates via Dependabot
+- strict branching policy: `develop` is the main collaboration branch; `main` only accepts signed, automated PRs from `develop` created by `github-actions[bot]`
 - security reporting guidance in `SECURITY.md`
 - full DevSecOps guidance in [docs/devsecops.md](docs/devsecops.md)
 
