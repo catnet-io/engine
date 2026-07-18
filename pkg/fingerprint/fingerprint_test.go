@@ -50,6 +50,11 @@ func TestOsFromBanners(t *testing.T) {
 			os:       "Windows",
 			osFamily: "windows",
 		},
+		{
+			banners:  map[int]string{3389: "MS-RDP"},
+			os:       "Windows",
+			osFamily: "windows",
+		},
 	}
 
 	for _, tt := range tests {

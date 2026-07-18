@@ -80,11 +80,27 @@ func grabBannerFromPort(ctx context.Context, ip string, port int, timeout time.D
 			0x31, 0x32, 0x00,
 		}
 		_, _ = conn.Write(smbReq)
+	} else if port == 3389 {
+		// RDP Connection Request (TPKT + X.224 Connection Request)
+		rdpReq := []byte{
+			0x03, 0x00, 0x00, 0x13, // TPKT Header (version 3, length 19)
+			0x0e,                   // X.224 Length (14 bytes following)
+			0xe0,                   // X.224 Connection Request PDTU
+			0x00, 0x00,             // DST Reference
+			0x00, 0x00,             // SRC Reference
+			0x00,                   // Class & options
+			0x01, 0x00, 0x08, 0x00, // RDP Neg Req: Type (0x01), Length (8)
+			0x03, 0x00, 0x00, 0x00, // Protocols (0x03 = SSL + RDP)
+		}
+		_, _ = conn.Write(rdpReq)
 	}
 
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err == nil && n > 0 {
+		if port == 3389 && n >= 4 && buf[0] == 0x03 && buf[1] == 0x00 {
+			return "MS-RDP"
+		}
 		rawBanner := string(buf[:n])
 		validBanner := strings.ToValidUTF8(rawBanner, "?")
 		return sanitizeBanner(validBanner)
@@ -167,6 +183,16 @@ func OsFromBanners(banners map[int]string) FingerprintResult {
 				res.OSFamily = "windows"
 				res.OS = "Windows"
 				res.Confidence = 70
+			}
+		}
+
+		if port == 3389 {
+			if len(lowerBanner) > 0 {
+				if res.OSFamily == "unknown" || res.OSFamily == "" {
+					res.OSFamily = "windows"
+					res.OS = "Windows"
+					res.Confidence = 70
+				}
 			}
 		}
 	}
