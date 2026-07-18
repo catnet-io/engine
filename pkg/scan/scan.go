@@ -83,7 +83,7 @@ func (e *Engine) ScanStream(ctx context.Context, ips []string, cfg profile.ScanP
 		}
 	}
 
-	_, err := engine.StartScan(ctx, ips, scanCfg, onEvent)
+	_, err := engine.StartScan(ctx, ips, scanCfg, onEvent) //nolint:staticcheck // pkg/scan wraps pkg/engine.StartScan internally
 	return err
 }
 
