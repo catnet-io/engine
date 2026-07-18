@@ -1,4 +1,4 @@
-# catnet-core
+# catnet-io/engine
 
 [![CI Status](https://img.shields.io/github/actions/workflow/status/catnet-io/engine/ci.yml?branch=main&style=flat-square)](https://github.com/catnet-io/engine/actions/workflows/ci.yml)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/catnet-io/engine?style=flat-square)](https://go.dev/)
@@ -7,35 +7,43 @@
 [![pkg.go.dev](https://img.shields.io/badge/pkg.go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/catnet-io/engine)
 [![Latest Release](https://img.shields.io/github/v/release/catnet-io/engine?style=flat-square)](https://github.com/catnet-io/engine/releases)
 
-Shared Go engine for the CatNet scanning ecosystem.
+Shared Go scanning engine for the CatNet ecosystem. Pure Go library — no binary, no CGO, no UI code.
 
-## Documentation & Contracts
+## Documentation
 
-Before adopting `catnet-core`, please review our documentation:
 - [API Stability Policy](docs/contracts/api-stability.md)
 - [Compatibility Policy](docs/contracts/compatibility.md)
+- [Event System Contract](docs/contracts/events.md)
 - [Integration Examples](docs/examples/integration_examples.md)
-- [Project Roadmap](ROADMAP.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Roadmap](ROADMAP.md)
 
 ## Packages
 
-| Package | Public Types & Functions | Description |
-|---|---|---|
-| `pkg/engine` | `ScanConfig`, `DefaultConfig`, `StartScan` | Main scan orchestrator using `context.Context`. |
-| `pkg/results` | `DeviceInfo`, `ScanReport`, `HostResult` | Core models used across the ecosystem. `HostResult` is the canonical type for the event-driven API. |
-| `pkg/targets` | `ParseRange` | Target parsing and CIDR utilities. |
-| `pkg/discovery` | `Ping`, `ReverseDNS`, `GetMAC` | Host liveness and resolution primitives. |
-| `pkg/ports` | `ScanPorts` | Port scanning utilities. |
-| `pkg/exporter` | `ExportJSON`, `ExportXML`, `ExportCSV` | Safe result export functions (`DeviceInfo`-based). |
-| `pkg/export` | `ExportJSON`, `ExportCSV` | Export for `[]results.HostResult` with CSV sanitization. |
-| `pkg/events` | `Event`, `EventType`, `HostDiscoveredData`, `ProgressData` | Async event system via Go channel. String-based `EventType` for Wails/TUI serialization. |
-| `pkg/profile` | `ScanProfile`, `DefaultProfile`, `Sanitize` | Scan configuration with concurrency and timeout. |
-| `pkg/scan` | `Engine`, `NewEngine`, `ScanStream`, `Stop`, `Ping`, `ReverseDNS`, `GetMAC`, `ScanPorts` | Event-driven orchestrator. Main entry point for frontends. |
-| `pkg/fingerprint` | `Fingerprint`, `GrabBanners`, `VendorFromMAC` | Heuristic OS/device detection. **Experimental.** |
-| `pkg/topology` | `BuildGraph`, `ExportD3JSON`, `DetectGateway` | Network topology graph builder. **Experimental.** |
-| `pkg/coreerr` | `ErrTimeout`, `ErrCancelled`, `ErrInvalidInput`, ... | Structured error taxonomy for `errors.Is`. |
+| Package | Key Exports | Description | Status |
+|---|---|---|---|
+| `pkg/engine` | `StartScan`, `ScanConfig`, `DefaultConfig`, `EventCallback` | Callback-based scan orchestrator. Use for CLI and scripting. | Stable |
+| `pkg/scan` | `Engine`, `NewEngine`, `ScanStream`, `Stop` | Channel-based scan orchestrator. **Preferred for GUI and TUI consumers.** | Stable |
+| `pkg/events` | `Event`, `EventType`, `HostDiscoveredData`, `ProgressData` | Async event types for the channel API. String-based `EventType` for safe serialization. | Stable |
+| `pkg/profile` | `ScanProfile`, `DefaultProfile`, `Sanitize` | Scan configuration for the channel API. | Stable |
+| `pkg/results` | `DeviceInfo`, `ScanReport`, `HostResult` | Core domain types used across the ecosystem. | Stable |
+| `pkg/discovery` | `Ping`, `ReverseDNS`, `GetMAC` | Host liveness and resolution primitives. | Stable |
+| `pkg/ports` | `ScanPorts` | TCP port scanner. Returns `<-chan int`. | Stable |
+| `pkg/targets` | `ParseRange` | IP range parsing — CIDR and dash range. | Stable |
+| `pkg/fingerprint` | `Fingerprint`, `FingerprintWithConfig`, `GrabBanners`, `VendorFromMAC` | Heuristic OS/device/vendor detection via TTL, banner, OUI, and RDP probe. | Stable · Experimental results |
+| `pkg/topology` | `BuildGraph`, `ExportD3JSON`, `DetectGateway` | Network topology graph builder. | Stable · Experimental results |
+| `pkg/export` | `ExportJSON`, `ExportCSV` | Export for `[]results.HostResult` with CSV sanitization. | Stable |
+| `pkg/exporter` | `ExportJSON`, `ExportCSV`, `ExportXML` | Export for `*results.ScanReport`. | Stable |
+| `pkg/coreerr` | `ErrTimeout`, `ErrCancelled`, `ErrInvalidInput` | Typed error taxonomy for `errors.Is`. | Stable |
+| `pkg/store` | `ScanStore`, `NewSQLiteStore` | SQLite scan history. | Deprecated — moving to consumers |
+| `pkg/diff` | `Compare`, `HostDiff` | Scan comparison. | Deprecated — moving to consumers |
 
 ## Quickstart
+
+### CLI and scripting — callback API
+
+Use `pkg/engine.StartScan` when you want a synchronous callback invoked per event.
+Suitable for CLI tools and scripts where the callback is lightweight.
 
 ```go
 package main
@@ -45,72 +53,110 @@ import (
 	"fmt"
 
 	"github.com/catnet-io/engine/pkg/engine"
-	"github.com/catnet-io/engine/pkg/results"
 )
 
 func main() {
-	ips := []string{"192.168.1.1"}
+	ips := []string{"192.168.1.1", "192.168.1.2"}
 	cfg := engine.DefaultConfig()
-	cfg.Sanitize()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	report, err := engine.StartScan(ctx, ips, cfg, func(event engine.ScanEvent) {
-		switch event.Type {
-		case engine.EventResult:
-			if event.Device != nil && event.Device.IsAlive {
-				fmt.Printf("Found: %s (%s)\n", event.Device.IP, event.Device.MAC)
-			}
-		case engine.EventProgress:
-			fmt.Printf("Progress: %.2f%%\n", event.Progress*100)
-		case engine.EventLifecycleStart:
-			fmt.Println("Scan started...")
-		case engine.EventLifecycleComplete:
-			fmt.Println("Scan completed!")
+	report, err := engine.StartScan(context.Background(), ips, cfg, func(ev engine.ScanEvent) {
+		if ev.Type == engine.EventResult && ev.Device != nil && ev.Device.IsAlive {
+			fmt.Printf("Found: %s (%s)\n", ev.Device.IP, ev.Device.Hostname)
 		}
 	})
-
 	if err != nil {
 		fmt.Printf("Scan failed: %v\n", err)
-	} else {
-		fmt.Printf("Total Scanned: %d, Alive: %d\n", report.Total, report.Alive)
+		return
+	}
+	fmt.Printf("Scanned: %d  Alive: %d\n", report.Total, report.Alive)
+}
+```
+
+### GUI and TUI — channel API
+
+Use `pkg/scan.Engine.ScanStream` when the consumer is a GUI or TUI that renders events
+asynchronously. Events are delivered via a Go channel, decoupling scan workers from
+rendering latency.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/catnet-io/engine/pkg/events"
+	"github.com/catnet-io/engine/pkg/profile"
+	"github.com/catnet-io/engine/pkg/scan"
+)
+
+func main() {
+	ips := []string{"192.168.1.1", "192.168.1.2"}
+	prof := profile.DefaultProfile()
+	eng := scan.NewEngine()
+
+	eventChan := make(chan events.Event)
+	go func() {
+		for ev := range eventChan {
+			if ev.Type == events.HostDiscovered {
+				data := ev.Data.(events.HostDiscoveredData)
+				fmt.Printf("Found: %s\n", data.Host.IP)
+			}
+		}
+	}()
+
+	if err := eng.ScanStream(context.Background(), ips, prof, eventChan); err != nil {
+		fmt.Printf("Scan failed: %v\n", err)
 	}
 }
 ```
 
-## Ecosystem
+## Fingerprinting
 
-| Repository | Role |
-|---|---|
-| [`catnet-core`](https://github.com/catnet-io/engine) | Shared Go engine ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no GUI |
-| [`app`](https://github.com/catnet-io/app) | Desktop frontend (Raygui) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Planned evolution to Wails + React |
-| [`catnet`](https://github.com/catnet-io/catnet) | Scriptable Go CLI |
-| [`tui`](https://github.com/catnet-io/tui) | Interactive TUI (Go + Bubble Tea) |
+`pkg/fingerprint` identifies OS, device type, and vendor using three passive/active signal sources:
 
-## Status
+| Signal | Source | Method |
+|---|---|---|
+| TTL | ICMP response | Passive — inferred from hop count |
+| OUI | MAC address prefix | Passive — offline vendor lookup |
+| Banner | Open TCP ports | Active — protocol-specific probes |
 
-Current version: v0.3.0
-See [CHANGELOG.md](CHANGELOG.md) for details.
+**Active probes** send a minimal payload to elicit a service response:
+
+| Port | Protocol | Probe | Notes |
+|---|---|---|---|
+| 80, 8080 | HTTP | `HEAD / HTTP/1.0` | — |
+| 445 | SMB | Negotiate request | Opt-in — `BannerGrabConfig.AggressiveSMB = true`. May trigger IDS/IPS. |
+| 3389 | RDP | TPKT + X.224 CR | Identifies MS-RDP from Connection Confirm flags. |
+
+Use `FingerprintWithConfig` to control probe behavior:
+
+```go
+cfg := fingerprint.BannerGrabConfig{
+	AggressiveSMB: false, // set true only if permitted by engagement rules
+	Concurrency:   5,
+}
+result := fingerprint.FingerprintWithConfig(ctx, ip, mac, ttl, ports, timeoutMs, cfg)
+```
 
 ## Security and CI
 
-This repository follows DevSecOps practices by integrating quality and security checks into the development workflow:
+- `go vet`, `go test -race`, and dependency verification on every push
+- Fuzz testing — `go test -fuzz=FuzzParseRange` for target parsing
+- Linting via `golangci-lint` (see `.golangci.yml`)
+- Vulnerability scanning with `govulncheck`
+- Dependency updates via Dependabot
+- GPG-signed automated merges from `develop` → `main`
+- Security reporting guidance in [`SECURITY.md`](SECURITY.md)
+- Full DevSecOps guidance in [`docs/devsecops.md`](docs/devsecops.md)
 
-- GitHub Actions CI on `main` and `develop`
-- `go vet`, `go test -race`, and dependency verification
-- `go test -fuzz=FuzzParseRange` fuzzing of target parsing
-- linting via `golangci-lint`
-- vulnerability scanning with `govulncheck`
-- dependency updates via Dependabot
-- strict branching policy: `develop` is the main collaboration branch; `main` only accepts signed, automated PRs from `develop` created by `github-actions[bot]`
-- security reporting guidance in `SECURITY.md`
-- full DevSecOps guidance in [docs/devsecops.md](docs/devsecops.md)
+## Status
+
+Current version: **v0.3.0** — see [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
+MIT — see [LICENSE](LICENSE).
 
 ## Part of the CatNet ecosystem
 
