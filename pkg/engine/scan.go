@@ -15,31 +15,88 @@ import (
 	"github.com/catnet-io/engine/pkg/results"
 )
 
-// StartScan inicia uma varredura de rede concorrente e retorna um relatÃ³rio completo.
+// asyncDispatcher wraps an EventCallback with a buffered channel,
+// decoupling the scan worker goroutines from callback execution latency.
+type asyncDispatcher struct {
+	ch   chan ScanEvent
+	done chan struct{}
+}
+
+func newAsyncDispatcher(cb EventCallback, bufSize int) *asyncDispatcher {
+	if bufSize <= 0 {
+		bufSize = 512
+	}
+	d := &asyncDispatcher{
+		ch:   make(chan ScanEvent, bufSize),
+		done: make(chan struct{}),
+	}
+	go func() {
+		defer close(d.done)
+		for ev := range d.ch {
+			cb(ev)
+		}
+	}()
+	return d
+}
+
+func (d *asyncDispatcher) emit(ev ScanEvent) {
+	// Non-blocking send: if buffer is full, drop the event rather than
+	// stalling the scan worker. Progress events are expendable;
+	// EventResult events use a blocking send to guarantee delivery.
+	if ev.Type == EventResult || ev.Type == EventLifecycleComplete || ev.Type == EventLifecycleCancel {
+		d.ch <- ev // blocking: these must not be dropped
+	} else {
+		select {
+		case d.ch <- ev:
+		default:
+			// progress event dropped — acceptable under backpressure
+		}
+	}
+}
+
+func (d *asyncDispatcher) close() {
+	close(d.ch)
+	<-d.done
+}
+
+// StartScan initiates a concurrent network scan and returns a complete report.
+//
+// Deprecated: StartScan is the synchronous, callback-based scan API.
+// For new consumers, prefer pkg/scan.Engine.ScanStream, which provides
+// an asynchronous, channel-based interface that decouples scan workers
+// from event consumers. StartScan remains supported for CLI and scripting use cases.
 func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventCallback) (*results.ScanReport, error) {
 	// Defensively enforce safe limits regardless of consumer input
 	cfg.Sanitize()
+
+	var dispatch *asyncDispatcher
+	if onEvent != nil {
+		dispatch = newAsyncDispatcher(onEvent, 512)
+		defer dispatch.close()
+	}
+
+	emit := func(ev ScanEvent) {
+		if dispatch != nil {
+			dispatch.emit(ev)
+		}
+	}
 
 	report := results.NewScanReport()
 	total := len(ips)
 	report.Total = total
 	report.Devices = make([]results.DeviceInfo, 0, total)
 
-	if onEvent != nil {
-		onEvent(ScanEvent{
-			Type:    EventLifecycleStart,
-			Message: "Scan started",
-		})
-	}
+	emit(ScanEvent{
+		Type:    EventLifecycleStart,
+		Message: "Scan started",
+	})
 
 	if total == 0 {
 		report.EndTime = time.Now()
-		if onEvent != nil {
-			onEvent(ScanEvent{
-				Type:    EventLifecycleComplete,
-				Message: "Scan completed (empty)",
-			})
-		}
+		emit(ScanEvent{
+			Type:    EventLifecycleComplete,
+			Message: "Scan completed (empty)",
+		})
 		return report, nil
 	}
 
@@ -52,16 +109,16 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 		threads = maxAllowedThreads
 	}
 	if _, ok := ctx.Deadline(); !ok {
-		// Calcula timeout defensivo:
-		// Assumindo port scan concorrente com ports.ScanConcurrency workers
+		// Calculate defensive timeout:
+		// Assuming concurrent port scan with ports.ScanConcurrency workers
 		maxTimePerHost := time.Duration(cfg.PingTimeoutMs) * time.Millisecond
 		if len(cfg.DefaultPorts) > 0 {
 			portBatches := (len(cfg.DefaultPorts) + ports.ScanConcurrency - 1) / ports.ScanConcurrency
 			maxTimePerHost += time.Duration(portBatches) * time.Duration(cfg.PortTimeoutMs) * time.Millisecond
 		}
 		maxDuration := time.Duration(total) * maxTimePerHost / time.Duration(threads)
-		maxDuration += time.Minute // Buffer de seguranÃ§a
-		// Limite fixo absoluto de 2 horas
+		maxDuration += time.Minute // Safety buffer
+		// Absolute fixed limit of 2 hours
 		if maxDuration > 2*time.Hour {
 			maxDuration = 2 * time.Hour
 		}
@@ -74,7 +131,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 
 	var processed int32
 	var mu sync.Mutex
-	// âš¡ Bolt Optimization: Replace channel distribution with a lock-free atomic index counter.
+	// ⚡ Bolt Optimization: Replace channel distribution with a lock-free atomic index counter.
 	// Bypasses the O(N) allocation of pushing all IPs into a buffered channel upfront,
 	// achieving ~3x faster work distribution to threads.
 	var index int32 = -1
@@ -133,19 +190,17 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 				mu.Unlock()
 
 				curr := atomic.AddInt32(&processed, 1)
-				if onEvent != nil {
-					diCopy := di
-					onEvent(ScanEvent{
-						Type:     EventResult,
-						Device:   &diCopy,
-						Progress: float64(curr) / float64(total),
-					})
-					onEvent(ScanEvent{
-						Type:     EventProgress,
-						Device:   nil,
-						Progress: float64(curr) / float64(total),
-					})
-				}
+				diCopy := di
+				emit(ScanEvent{
+					Type:     EventResult,
+					Device:   &diCopy,
+					Progress: float64(curr) / float64(total),
+				})
+				emit(ScanEvent{
+					Type:     EventProgress,
+					Device:   nil,
+					Progress: float64(curr) / float64(total),
+				})
 			}
 		}()
 	}
@@ -153,19 +208,13 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	report.EndTime = time.Now()
 
 	if ctx.Err() == context.DeadlineExceeded {
-		if onEvent != nil {
-			onEvent(ScanEvent{Type: EventLifecycleCancel, Message: "Scan timeout"})
-		}
+		emit(ScanEvent{Type: EventLifecycleCancel, Message: "Scan timeout"})
 		return report, fmt.Errorf("%w: scan reached timeout", coreerr.ErrTimeout)
 	} else if ctx.Err() == context.Canceled {
-		if onEvent != nil {
-			onEvent(ScanEvent{Type: EventLifecycleCancel, Message: "Scan cancelled"})
-		}
+		emit(ScanEvent{Type: EventLifecycleCancel, Message: "Scan cancelled"})
 		return report, fmt.Errorf("%w: scan was cancelled", coreerr.ErrCancelled)
 	}
 
-	if onEvent != nil {
-		onEvent(ScanEvent{Type: EventLifecycleComplete, Message: "Scan completed successfully"})
-	}
+	emit(ScanEvent{Type: EventLifecycleComplete, Message: "Scan completed successfully"})
 	return report, nil
 }

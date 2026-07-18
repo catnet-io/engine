@@ -18,7 +18,10 @@ func GrabBanners(ctx context.Context, ip string, openPorts []int, timeoutMs int,
 
 	timeout := time.Duration(timeoutMs) * time.Millisecond
 
-	workers := BannerConcurrency
+	workers := bc.Concurrency
+	if workers <= 0 {
+		workers = BannerConcurrency
+	}
 	if len(openPorts) < workers {
 		workers = len(openPorts)
 	}

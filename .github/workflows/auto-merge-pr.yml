@@ -28,8 +28,7 @@ jobs:
             --base main \
             --head develop \
             --title "chore: merge develop → main" \
-            --body "Automated PR by github-actions[bot]." \
-            2>/dev/null || \
+            --body "Automated PR by github-actions[bot]." || \
             echo "PR already exists, skipping."
 
       - name: Request review and enable auto-merge

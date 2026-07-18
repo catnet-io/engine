@@ -6,7 +6,8 @@
 
 The following packages form the core stable surface of the ecosystem. Breaking changes to these packages will be avoided whenever possible, and if required, they will be communicated via explicit version bumps and detailed changelogs.
 
-- **`pkg/engine`**: The primary orchestrator. `StartScan` and `ScanConfig` are the standard way to run scans.
+- **`pkg/scan`**: The canonical orchestrator. `Engine.ScanStream` is the standard way to run scans using the channel-based API.
+- **`pkg/engine`**: Callback-based orchestrator. `StartScan` is deprecated in favor of `pkg/scan.Engine.ScanStream`.
 - **`pkg/results`**: Defines the `DeviceInfo` model and other schemas. This is the canonical schema used across the ecosystem.
 - **`pkg/targets`**: Target parsing utilities like `ParseRange`.
 - **`pkg/discovery`**: Discovery tools for Liveness, DNS, and MAC resolution.

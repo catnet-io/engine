@@ -33,5 +33,5 @@ type ScanEvent struct {
 
 ## Consumer Responsibilities
 
-1. **Non-blocking callbacks:** Event callbacks are executed synchronously by the engine's worker goroutines. Consumers **must not** perform long-blocking operations in the callback. If processing requires heavy I/O, dispatch it to a channel or separate goroutine.
+1. **Asynchronous dispatch safety:** Since v0.5.0, the engine uses an internal asynchronous dispatcher (`asyncDispatcher`) with a buffered channel to decouple scan worker execution from callback execution. However, consumers should still keep callback code efficient to prevent backpressure from eventually filling the buffer limit (512) and blocking.
 2. **Thread safety:** The `Device` pointer in `EventResult` points to a copied value, but consumers should avoid mutating it.
