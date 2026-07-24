@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING CHANGE**: **pkg/discovery** & **pkg/scan**: Updated `Ping`, `ReverseDNS`, `GetMAC`, and `ScanPorts` to accept `context.Context` as first parameter to support hard context cancellation across discovery operations and active port scanning.
+
 ### Fixed
 - **CI/Workflows**: Resolved dependency loop in PRs #129 and #130 by replacing invalid action tags (`@v7`/`@v6`) with full immutable commit SHAs across all `.github/workflows/` files.
 - **CI/Workflows**: Added automated action version verification check in `ci.yml`.
