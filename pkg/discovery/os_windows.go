@@ -18,11 +18,6 @@ var (
 	sendARP         = iphlpapi.NewProc("SendARP")
 )
 
-// ipv4ToUint32 converts an IPv4 net.IP to uint32 in Little-Endian format for Windows syscalls.
-func ipv4ToUint32(ip net.IP) uint32 {
-	return uint32(ip[0]) | uint32(ip[1])<<8 | uint32(ip[2])<<16 | uint32(ip[3])<<24
-}
-
 // osPing performs an ICMP ping on Windows.
 // ⚡ Bolt Optimization: Use native IcmpSendEcho from iphlpapi.dll instead of spawning ping.exe.
 // This avoids process-creation overhead on Windows for massive concurrent scans.
@@ -38,7 +33,8 @@ func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 	if destIP == nil {
 		return false
 	}
-	destIPUint32 := ipv4ToUint32(destIP)
+	var destIPUint32 uint32
+	destIPUint32 = uint32(destIP[0]) | uint32(destIP[1])<<8 | uint32(destIP[2])<<16 | uint32(destIP[3])<<24
 
 	// Result channel
 	resChan := make(chan bool, 1)
@@ -90,15 +86,12 @@ func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 
 // osGetMAC obtains the MAC address using SendARP on Windows.
 func osGetMAC(ctx context.Context, ip string) string {
-	if ctx.Err() != nil {
-		return ""
-	}
-
 	destIP := net.ParseIP(ip).To4()
 	if destIP == nil {
 		return ""
 	}
-	destIPUint32 := ipv4ToUint32(destIP)
+	var destIPUint32 uint32
+	destIPUint32 = uint32(destIP[0]) | uint32(destIP[1])<<8 | uint32(destIP[2])<<16 | uint32(destIP[3])<<24
 
 	resChan := make(chan string, 1)
 

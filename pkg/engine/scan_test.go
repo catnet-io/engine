@@ -325,3 +325,45 @@ func TestNoGoroutineLeakOnPrematureCancel(t *testing.T) {
 		t.Errorf("goroutine leak detected: %d goroutines created and not cleaned up", leak)
 	}
 }
+
+func TestHardCancellation(t *testing.T) {
+	before := runtime.NumGoroutine()
+
+	ips := make([]string, 100)
+	for i := range ips {
+		ips[i] = "10.0.0." + strconv.Itoa(i+1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	var processed int32
+	go func() {
+		// Stop waiting if context is already canceled or a long time has passed
+		for i := 0; i < 50; i++ {
+			if atomic.LoadInt32(&processed) >= 1 || ctx.Err() != nil {
+				break
+			}
+			time.Sleep(time.Millisecond)
+		}
+		cancel() // cancel almost immediately
+	}()
+
+	cfg := DefaultConfig()
+	cfg.PingTimeoutMs = 500
+	cfg.MaxThreads = 10
+
+	_, _ = StartScan(ctx, ips, cfg, func(ev ScanEvent) {
+		if ev.Type == EventResult {
+			atomic.AddInt32(&processed, 1)
+		}
+	})
+
+	time.Sleep(100 * time.Millisecond)
+	runtime.GC()
+
+	after := runtime.NumGoroutine()
+	leak := after - before
+	if leak > 2 {
+		t.Errorf("goroutine leak detected: %d goroutines created and not cleaned up", leak)
+	}
+}

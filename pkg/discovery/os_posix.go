@@ -45,10 +45,6 @@ func osGetMAC(ctx context.Context, ip string) string {
 		return ""
 	}
 
-	if ctx.Err() != nil {
-		return ""
-	}
-
 	if data, err := os.ReadFile("/proc/net/arp"); err == nil {
 		return parseProcNetArp(data, ip)
 	}

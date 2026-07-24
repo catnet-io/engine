@@ -95,8 +95,8 @@ func (e *Engine) Stop() {
 	}
 }
 
-func Ping(ctx context.Context, ip string, timeoutMs int) bool {
-	return discovery.Ping(ctx, ip, timeoutMs)
+func Ping(ip string, timeoutMs int) bool {
+	return discovery.Ping(context.Background(), ip, timeoutMs)
 }
 
 func ReverseDNS(ctx context.Context, ip string) string {
@@ -107,9 +107,9 @@ func GetMAC(ctx context.Context, ip string) string {
 	return discovery.GetMAC(ctx, ip)
 }
 
-func ScanPorts(ctx context.Context, ip string, portsList []int, timeoutMs int) []int {
+func ScanPorts(ip string, portsList []int, timeoutMs int) []int {
 	var result []int
-	for p := range ports.ScanPorts(ctx, ip, portsList, timeoutMs) {
+	for p := range ports.ScanPorts(context.Background(), ip, portsList, timeoutMs) {
 		result = append(result, p)
 	}
 	return result

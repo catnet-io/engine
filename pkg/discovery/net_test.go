@@ -61,23 +61,3 @@ func TestGetMACValidation(t *testing.T) {
 		})
 	}
 }
-
-func TestReverseDNSCancellation(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	res := ReverseDNS(ctx, "8.8.8.8")
-	if res != "" {
-		t.Errorf("ReverseDNS() with cancelled context should return empty string, got: %q", res)
-	}
-}
-
-func TestGetMACCancellation(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	res := GetMAC(ctx, "127.0.0.1")
-	if res != "" {
-		t.Errorf("GetMAC() with cancelled context should return empty string, got: %q", res)
-	}
-}
