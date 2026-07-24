@@ -8,7 +8,7 @@ import (
 	"github.com/catnet-io/engine/internal/netutil"
 )
 
-// Ping performs an ICMP ping on the target IP with timeout in milliseconds.
+// Ping realiza um ping ICMP na mÃ¡quina com timeout em milissegundos.
 func Ping(ctx context.Context, ip string, timeoutMs int) bool {
 	if err := netutil.ValidateIPv4(ip); err != nil {
 		return false
@@ -16,12 +16,9 @@ func Ping(ctx context.Context, ip string, timeoutMs int) bool {
 	return osPing(ctx, ip, timeoutMs)
 }
 
-// ReverseDNS performs reverse DNS resolution for the given IP address.
+// ReverseDNS resolve o nome do host do endereÃ§o IP dado.
 func ReverseDNS(ctx context.Context, ip string) string {
 	if err := netutil.ValidateIPv4(ip); err != nil {
-		return ""
-	}
-	if ctx.Err() != nil {
 		return ""
 	}
 	names, err := net.DefaultResolver.LookupAddr(ctx, ip)
@@ -31,7 +28,7 @@ func ReverseDNS(ctx context.Context, ip string) string {
 	return ""
 }
 
-// GetMAC attempts to retrieve the MAC address for the target IP address.
+// GetMAC tenta obter o endereÃ§o MAC da mÃ¡quina alvo.
 func GetMAC(ctx context.Context, ip string) string {
 	if err := netutil.ValidateIPv4(ip); err != nil {
 		return ""

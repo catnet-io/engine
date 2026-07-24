@@ -18,12 +18,7 @@ var (
 	sendARP         = iphlpapi.NewProc("SendARP")
 )
 
-// ipv4ToUint32 converts an IPv4 net.IP to uint32 in Little-Endian format for Windows syscalls.
-func ipv4ToUint32(ip net.IP) uint32 {
-	return uint32(ip[0]) | uint32(ip[1])<<8 | uint32(ip[2])<<16 | uint32(ip[3])<<24
-}
-
-// osPing performs an ICMP ping on Windows.
+// osPing faz ping no Windows
 // ⚡ Bolt Optimization: Use native IcmpSendEcho from iphlpapi.dll instead of spawning ping.exe.
 // This avoids process-creation overhead on Windows for massive concurrent scans.
 func osPing(ctx context.Context, ip string, timeoutMs int) bool {
@@ -38,7 +33,8 @@ func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 	if destIP == nil {
 		return false
 	}
-	destIPUint32 := ipv4ToUint32(destIP)
+	var destIPUint32 uint32
+	destIPUint32 = uint32(destIP[0]) | uint32(destIP[1])<<8 | uint32(destIP[2])<<16 | uint32(destIP[3])<<24
 
 	// Result channel
 	resChan := make(chan bool, 1)
@@ -88,7 +84,7 @@ func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 	}
 }
 
-// osGetMAC obtains the MAC address using SendARP on Windows.
+// osGetMAC obtém o MAC usando SendARP no Windows
 func osGetMAC(ctx context.Context, ip string) string {
 	if ctx.Err() != nil {
 		return ""
@@ -98,18 +94,19 @@ func osGetMAC(ctx context.Context, ip string) string {
 	if destIP == nil {
 		return ""
 	}
-	destIPUint32 := ipv4ToUint32(destIP)
+	var destIPUint32 uint32
+	destIPUint32 = uint32(destIP[0]) | uint32(destIP[1])<<8 | uint32(destIP[2])<<16 | uint32(destIP[3])<<24
 
 	resChan := make(chan string, 1)
 
 	go func() {
 		var mac [6]byte
 		macLen := uint32(len(mac))
-		// Safety: mac is a fixed-size [6]byte array allocated on the stack.
-		// macLen is initialized with len(mac) == 6 before the call.
-		// Access via unsafe.Pointer is safe because the array doesn't escape
-		// the scope and its size is known at compile time.
-		// Validating `macLen == 6` after the return guarantees uncorrupted data.
+		// Segurança: mac é um array de tamanho fixo [6]byte alocado na stack.
+		// macLen é inicializado com len(mac) == 6 antes da chamada.
+		// O acesso via unsafe.Pointer é seguro porque o array não escapa do
+		// escopo e seu tamanho é conhecido em tempo de compilação.
+		// A validação `macLen == 6` após o retorno garante dados não corrompidos.
 		ret, _, _ := sendARP.Call(
 			uintptr(destIPUint32),
 			0,
@@ -119,9 +116,9 @@ func osGetMAC(ctx context.Context, ip string) string {
 		if ret == 0 && macLen == 6 {
 			resChan <- fmt.Sprintf("%02X-%02X-%02X-%02X-%02X-%02X",
 				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5])
-			return
+		} else {
+			resChan <- ""
 		}
-		resChan <- ""
 	}()
 
 	select {
