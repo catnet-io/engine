@@ -14,10 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING CHANGE**: `Ping`, `ReverseDNS`, `GetMAC`, and `ScanPorts` wrappers in `pkg/scan` and `pkg/discovery` now accept `context.Context` as their first argument.
 - **Discovery**: `osGetMAC` in `pkg/discovery/os_posix.go` and `pkg/discovery/os_windows.go` properly respect context cancellation.
+- **Governance**: Updated Hard Rule #4 in `AGENTS.md` mandating English for all repository artifacts, PR review comments, descriptions, and commit messages.
 
 ### Fixed
 - **Governance**: Added Hard Rule #8 in `AGENTS.md` forbidding `squash and merge` to maintain DevSecOps traceability, commit provenance, and auditability.
-- **Governance**: Updated Hard Rule #4 in `AGENTS.md` mandating English for all PR review comments, descriptions, and commit messages.
 
 ## [0.5.1] - 2026-07-16
 
