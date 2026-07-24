@@ -45,3 +45,23 @@ func TestScanPorts(t *testing.T) {
 		})
 	}
 }
+
+func TestScanPortsCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	// Use ports that are usually blocked or closed to simulate time-consuming operation
+	// if cancellation wasn't working.
+	ports := []int{80, 81, 8080}
+
+	openChan := ScanPorts(ctx, "127.0.0.1", ports, 500)
+
+	count := 0
+	for range openChan {
+		count++
+	}
+
+	if count != 0 {
+		t.Errorf("expected 0 ports returned after cancellation, got %d", count)
+	}
+}

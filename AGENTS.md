@@ -73,6 +73,8 @@ Do not merge or remove either API without explicit instruction. Do not add a thi
    to toggle during local development.
 6. **`pkg/store` and `pkg/diff` are deprecated.** Do not add new functionality to these
    packages. Do not create new callers inside this repository.
+7. **Immutable GitHub Action Pinning.** All GitHub Actions in workflow files must be pinned to full 40-character commit SHAs. Never use unpinned tags (e.g. `@v4`).
+8. **No `squash and merge`.** Never use squash merges (`gh pr merge --squash` or GitHub UI squash) for PRs in this repository. All PR merges must preserve atomic commit history via merge commits (`gh pr merge --merge`) or rebase merges (`gh pr merge --rebase`) to maintain DevSecOps traceability, commit provenance, and auditability.
 
 ---
 

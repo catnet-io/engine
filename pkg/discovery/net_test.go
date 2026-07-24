@@ -37,7 +37,7 @@ func TestReverseDNSValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if res := ReverseDNS(tt.ip); res != "" {
+			if res := ReverseDNS(context.Background(), tt.ip); res != "" {
 				t.Errorf("ReverseDNS(%q) expected empty string, got %q", tt.ip, res)
 			}
 		})
@@ -55,9 +55,29 @@ func TestGetMACValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if res := GetMAC(tt.ip); res != "" {
+			if res := GetMAC(context.Background(), tt.ip); res != "" {
 				t.Errorf("GetMAC(%q) expected empty string, got %q", tt.ip, res)
 			}
 		})
+	}
+}
+
+func TestReverseDNSCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	res := ReverseDNS(ctx, "8.8.8.8")
+	if res != "" {
+		t.Errorf("ReverseDNS() with cancelled context should return empty string, got: %q", res)
+	}
+}
+
+func TestGetMACCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	res := GetMAC(ctx, "127.0.0.1")
+	if res != "" {
+		t.Errorf("GetMAC() with cancelled context should return empty string, got: %q", res)
 	}
 }
