@@ -73,6 +73,11 @@ Do not merge or remove either API without explicit instruction. Do not add a thi
    to toggle during local development.
 6. **`pkg/store` and `pkg/diff` are deprecated.** Do not add new functionality to these
    packages. Do not create new callers inside this repository.
+7. **Immutable GitHub Action Pinning (SHA Hashes).** All GitHub Actions in `.github/workflows/`
+   must be pinned by full 40-character commit SHAs accompanied by a version comment
+   (e.g., `uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2`).
+   Never use unpinned mutable tags or non-existent action major versions (`@v7`, `@v6`). Any PR
+   introducing unpinned mutable tags or invalid action SHAs must be rejected.
 
 ---
 

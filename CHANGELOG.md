@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **CI/Workflows**: Resolved dependency loop in PRs #129 and #130 by replacing invalid action tags (`@v7`/`@v6`) with full immutable commit SHAs across all `.github/workflows/` files.
+- **CI/Workflows**: Added automated action version verification check in `ci.yml`.
+- **Governance**: Added Hard Rule #7 in `AGENTS.md` mandating immutable 40-character commit SHA pinning for all GitHub Actions.
+
 ## [0.5.1] - 2026-07-16
 
 ### Removed
