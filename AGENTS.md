@@ -67,8 +67,7 @@ Do not merge or remove either API without explicit instruction. Do not add a thi
    This is a library — it has no `main` package.
 3. **No scanning logic in consumers.** If you find yourself adding discovery, port scanning,
    or fingerprinting logic outside this repository, stop and add it here instead.
-4. **English only.** All Go comments, godoc, log messages, and exported error strings must
-   be in English. No Portuguese in `.go` files.
+4. **English only everywhere.** All code, comments, godoc, log messages, error strings, PR descriptions, PR review comments, commit messages, and documentation across the entire repository must be in English. Portuguese and non-English text are strictly forbidden.
 5. **No local `replace` directives committed to `main`.** Use `scripts/dev-replace.sh on/off`
    to toggle during local development.
 6. **`pkg/store` and `pkg/diff` are deprecated.** Do not add new functionality to these
