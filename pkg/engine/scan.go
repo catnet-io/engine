@@ -154,8 +154,8 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 				di := results.DeviceInfo{IP: ip}
 				di.IsAlive = discovery.Ping(ctx, ip, cfg.PingTimeoutMs)
 				if di.IsAlive && ctx.Err() == nil {
-					di.Hostname = discovery.ReverseDNS(ip)
-					di.MAC = discovery.GetMAC(ip)
+					di.Hostname = discovery.ReverseDNS(ctx, ip)
+					di.MAC = discovery.GetMAC(ctx, ip)
 
 					portChan := ports.ScanPorts(ctx, di.IP, cfg.DefaultPorts, cfg.PortTimeoutMs)
 					for p := range portChan {

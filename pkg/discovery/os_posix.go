@@ -40,8 +40,12 @@ func osPing(ctx context.Context, ip string, timeoutMs int) bool {
 // osGetMAC obtém o MAC em sistemas POSIX
 // ⚡ Bolt Optimization: Read directly from /proc/net/arp on Linux before falling back to `arp -an` exec.
 // This avoids expensive fork/exec overhead for a 100x+ speedup during concurrent scans.
-func osGetMAC(ip string) string {
+func osGetMAC(ctx context.Context, ip string) string {
 	if net.ParseIP(ip) == nil {
+		return ""
+	}
+
+	if ctx.Err() != nil {
 		return ""
 	}
 
@@ -51,7 +55,7 @@ func osGetMAC(ip string) string {
 
 	// Fallback for macOS, BSD, or if /proc isn't mounted
 
-	cmd := exec.Command("arp", "-an")
+	cmd := exec.CommandContext(ctx, "arp", "-an")
 	out, err := cmd.Output()
 	if err != nil {
 		return ""

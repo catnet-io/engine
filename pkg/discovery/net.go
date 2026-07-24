@@ -17,11 +17,11 @@ func Ping(ctx context.Context, ip string, timeoutMs int) bool {
 }
 
 // ReverseDNS resolve o nome do host do endereÃ§o IP dado.
-func ReverseDNS(ip string) string {
+func ReverseDNS(ctx context.Context, ip string) string {
 	if err := netutil.ValidateIPv4(ip); err != nil {
 		return ""
 	}
-	names, err := net.LookupAddr(ip)
+	names, err := net.DefaultResolver.LookupAddr(ctx, ip)
 	if err == nil && len(names) > 0 {
 		return strings.TrimSuffix(names[0], ".")
 	}
@@ -29,9 +29,9 @@ func ReverseDNS(ip string) string {
 }
 
 // GetMAC tenta obter o endereÃ§o MAC da mÃ¡quina alvo.
-func GetMAC(ip string) string {
+func GetMAC(ctx context.Context, ip string) string {
 	if err := netutil.ValidateIPv4(ip); err != nil {
 		return ""
 	}
-	return osGetMAC(ip)
+	return osGetMAC(ctx, ip)
 }
