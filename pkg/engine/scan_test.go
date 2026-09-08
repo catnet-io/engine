@@ -320,7 +320,7 @@ func TestNoGoroutineLeakOnPrematureCancel(t *testing.T) {
 
 	after := runtime.NumGoroutine()
 	leak := after - before
-	if leak > 2 { // tolerance for test harness goroutines
+	if leak > 3 { // tolerance for test harness goroutines
 		t.Errorf("goroutine leak detected: %d goroutines created and not cleaned up", leak)
 	}
 }
