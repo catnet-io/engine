@@ -45,3 +45,7 @@
 ## 2026-07-28 - [Validating Context Cancellation for Blocking OS Executions]
 **Learning:** Functions that wrap long-running system operations (such as `exec.CommandContext` or `net.DialContext`) generally handle context cancellation automatically, but early aborts for network calls need explicit testing. Merely relying on lower-level Go standard library propagation does not automatically guarantee zero side-effects if the cancellation happens before execution logic completes in consumer boundaries.
 **Action:** Always include fine-grained tests that explicitly pass a pre-cancelled context to network discovery and connection routines (e.g. Ping, LookupAddr) to definitively prove zero leakage of OS processes or goroutines on early aborts.
+
+## 2026-09-17 - [Validating Context Cancellation for ReverseDNS]
+**Learning:** Adding test coverage for early aborts on network discovery calls like ReverseDNS ensures that they don't leak goroutines or resources during premature context cancellations.
+**Action:** Always test these scenarios manually with delta checks using `runtime.NumGoroutine()` with thresholds (like `<= 3`) after context cancellation, allowing adequate time (e.g. 100ms) for background processes to settle down.
