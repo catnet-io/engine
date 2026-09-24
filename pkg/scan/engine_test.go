@@ -2,6 +2,7 @@ package scan
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -110,5 +111,51 @@ func TestEngineRejectsParallelScan(t *testing.T) {
 	}
 	if firstErr != nil {
 		t.Errorf("first ScanStream failed unexpectedly: %v", firstErr)
+	}
+}
+
+func TestNoGoroutineLeakOnPrematureCancel(t *testing.T) {
+	ips := make([]string, 100)
+	for i := range ips {
+		// Just some random IP that might or might not resolve fast
+		ips[i] = "10.0.0.1"
+	}
+	cfg := profile.DefaultProfile()
+	cfg.TimeoutMs = 500
+	cfg.Concurrency = 10
+
+	before := runtime.NumGoroutine()
+
+	engine := NewEngine()
+	// Unbuffered channel to easily trigger blocking and simulate unconsumed events if consumer dies
+	ch := make(chan events.Event)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		// Read a few events to let things start
+		count := 0
+		for range ch {
+			count++
+			if count == 2 {
+				break
+			}
+		}
+		// Allow some goroutines to spawn
+		time.Sleep(10 * time.Millisecond)
+		// Cancel abruptly simulating consumer exit/error
+		cancel()
+	}()
+
+	_ = engine.ScanStream(ctx, ips, cfg, ch)
+
+	// Wait for background routines to settle
+	time.Sleep(100 * time.Millisecond)
+	runtime.GC()
+
+	after := runtime.NumGoroutine()
+	leak := after - before
+	if leak > 3 {
+		t.Errorf("goroutine leak detected: before=%d, after=%d, leak=%d", before, after, leak)
 	}
 }
