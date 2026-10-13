@@ -39,12 +39,19 @@ func newAsyncDispatcher(cb EventCallback, bufSize int) *asyncDispatcher {
 	return d
 }
 
-func (d *asyncDispatcher) emit(ev ScanEvent) {
+func (d *asyncDispatcher) emit(ctx context.Context, ev ScanEvent) {
 	// Non-blocking send: if buffer is full, drop the event rather than
 	// stalling the scan worker. Progress events are expendable;
 	// EventResult events use a blocking send to guarantee delivery.
 	if ev.Type == EventResult || ev.Type == EventLifecycleComplete || ev.Type == EventLifecycleCancel {
-		d.ch <- ev // blocking: these must not be dropped
+		select {
+		case d.ch <- ev: // prioritize channel send
+		default:
+			select {
+			case d.ch <- ev: // blocking: these must not be dropped
+			case <-ctx.Done(): // prevent indefinite block if consumer stops reading
+			}
+		}
 	} else {
 		select {
 		case d.ch <- ev:
@@ -75,9 +82,9 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 		defer dispatch.close()
 	}
 
-	emit := func(ev ScanEvent) {
+	emit := func(ctx context.Context, ev ScanEvent) {
 		if dispatch != nil {
-			dispatch.emit(ev)
+			dispatch.emit(ctx, ev)
 		}
 	}
 
@@ -86,14 +93,14 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	report.Total = total
 	report.Devices = make([]results.DeviceInfo, 0, total)
 
-	emit(ScanEvent{
+	emit(ctx, ScanEvent{
 		Type:    EventLifecycleStart,
 		Message: "Scan started",
 	})
 
 	if total == 0 {
 		report.EndTime = time.Now()
-		emit(ScanEvent{
+		emit(ctx, ScanEvent{
 			Type:    EventLifecycleComplete,
 			Message: "Scan completed (empty)",
 		})
@@ -191,12 +198,12 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 
 				curr := atomic.AddInt32(&processed, 1)
 				diCopy := di
-				emit(ScanEvent{
+				emit(ctx, ScanEvent{
 					Type:     EventResult,
 					Device:   &diCopy,
 					Progress: float64(curr) / float64(total),
 				})
-				emit(ScanEvent{
+				emit(ctx, ScanEvent{
 					Type:     EventProgress,
 					Device:   nil,
 					Progress: float64(curr) / float64(total),
@@ -208,13 +215,13 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 	report.EndTime = time.Now()
 
 	if ctx.Err() == context.DeadlineExceeded {
-		emit(ScanEvent{Type: EventLifecycleCancel, Message: "Scan timeout"})
+		emit(ctx, ScanEvent{Type: EventLifecycleCancel, Message: "Scan timeout"})
 		return report, fmt.Errorf("%w: scan reached timeout", coreerr.ErrTimeout)
 	} else if ctx.Err() == context.Canceled {
-		emit(ScanEvent{Type: EventLifecycleCancel, Message: "Scan cancelled"})
+		emit(ctx, ScanEvent{Type: EventLifecycleCancel, Message: "Scan cancelled"})
 		return report, fmt.Errorf("%w: scan was cancelled", coreerr.ErrCancelled)
 	}
 
-	emit(ScanEvent{Type: EventLifecycleComplete, Message: "Scan completed successfully"})
+	emit(ctx, ScanEvent{Type: EventLifecycleComplete, Message: "Scan completed successfully"})
 	return report, nil
 }

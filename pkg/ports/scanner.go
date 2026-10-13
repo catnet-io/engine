@@ -54,7 +54,11 @@ func ScanPorts(ctx context.Context, ip string, ports []int, timeoutMs int) <-cha
 				conn, err := dialer.DialContext(ctx, "tcp", address)
 				if err == nil {
 					conn.Close()
-					out <- p
+					select {
+					case out <- p:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
 		}()
