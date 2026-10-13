@@ -68,7 +68,7 @@ func TestScanPortsCancellation(t *testing.T) {
 	}
 }
 
-func TestScanPortsPrematureCancel(t *testing.T) {
+func TestNoGoroutineLeakOnPrematureCancel(t *testing.T) {
 	before := runtime.NumGoroutine()
 
 	ts := httptest.NewServer(nil)
