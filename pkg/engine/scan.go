@@ -20,15 +20,17 @@ import (
 type asyncDispatcher struct {
 	ch   chan ScanEvent
 	done chan struct{}
+	ctx  context.Context
 }
 
-func newAsyncDispatcher(cb EventCallback, bufSize int) *asyncDispatcher {
+func newAsyncDispatcher(ctx context.Context, cb EventCallback, bufSize int) *asyncDispatcher {
 	if bufSize <= 0 {
 		bufSize = 512
 	}
 	d := &asyncDispatcher{
 		ch:   make(chan ScanEvent, bufSize),
 		done: make(chan struct{}),
+		ctx:  ctx,
 	}
 	go func() {
 		defer close(d.done)
@@ -44,7 +46,14 @@ func (d *asyncDispatcher) emit(ev ScanEvent) {
 	// stalling the scan worker. Progress events are expendable;
 	// EventResult events use a blocking send to guarantee delivery.
 	if ev.Type == EventResult || ev.Type == EventLifecycleComplete || ev.Type == EventLifecycleCancel {
-		d.ch <- ev // blocking: these must not be dropped
+		select {
+		case d.ch <- ev:
+		default:
+			select {
+			case d.ch <- ev:
+			case <-d.ctx.Done():
+			}
+		}
 	} else {
 		select {
 		case d.ch <- ev:
@@ -71,7 +80,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 
 	var dispatch *asyncDispatcher
 	if onEvent != nil {
-		dispatch = newAsyncDispatcher(onEvent, 512)
+		dispatch = newAsyncDispatcher(ctx, onEvent, 512)
 		defer dispatch.close()
 	}
 

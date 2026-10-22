@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Engine**: Fixed goroutine and socket leaks on premature context cancellation in the async event dispatcher (`pkg/engine`) and TCP port scanner (`pkg/ports`).
+
 ## [0.7.0] - 2026-07-30
 
 ### Added
