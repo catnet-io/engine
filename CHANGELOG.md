@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **scan**: Fixed pseudo-random silent dropping of critical events when contexts are canceled by implementing a two-stage select pattern in `ScanStream`.
+
 ## [0.7.0] - 2026-07-30
 
 ### Added

@@ -77,9 +77,15 @@ func (e *Engine) ScanStream(ctx context.Context, ips []string, cfg profile.ScanP
 		case engine.EventLifecycleCancel:
 			return
 		}
+		// Two-stage select to prioritize sending the event, avoiding silent drops
+		// of critical events when ctx.Done() is also ready.
 		select {
 		case eventChan <- ev:
-		case <-ctx.Done():
+		default:
+			select {
+			case eventChan <- ev:
+			case <-ctx.Done():
+			}
 		}
 	}
 
