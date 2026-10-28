@@ -39,12 +39,20 @@ func newAsyncDispatcher(cb EventCallback, bufSize int) *asyncDispatcher {
 	return d
 }
 
-func (d *asyncDispatcher) emit(ev ScanEvent) {
+func (d *asyncDispatcher) emit(ctx context.Context, ev ScanEvent) {
 	// Non-blocking send: if buffer is full, drop the event rather than
 	// stalling the scan worker. Progress events are expendable;
 	// EventResult events use a blocking send to guarantee delivery.
 	if ev.Type == EventResult || ev.Type == EventLifecycleComplete || ev.Type == EventLifecycleCancel {
-		d.ch <- ev // blocking: these must not be dropped
+		select {
+		case d.ch <- ev:
+			return
+		default:
+		}
+		select {
+		case d.ch <- ev:
+		case <-ctx.Done():
+		}
 	} else {
 		select {
 		case d.ch <- ev:
@@ -77,7 +85,7 @@ func StartScan(ctx context.Context, ips []string, cfg ScanConfig, onEvent EventC
 
 	emit := func(ev ScanEvent) {
 		if dispatch != nil {
-			dispatch.emit(ev)
+			dispatch.emit(ctx, ev)
 		}
 	}
 

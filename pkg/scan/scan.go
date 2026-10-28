@@ -79,6 +79,11 @@ func (e *Engine) ScanStream(ctx context.Context, ips []string, cfg profile.ScanP
 		}
 		select {
 		case eventChan <- ev:
+			return
+		default:
+		}
+		select {
+		case eventChan <- ev:
 		case <-ctx.Done():
 		}
 	}
