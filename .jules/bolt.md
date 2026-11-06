@@ -45,3 +45,6 @@
 ## 2026-07-28 - [Validating Context Cancellation for Blocking OS Executions]
 **Learning:** Functions that wrap long-running system operations (such as `exec.CommandContext` or `net.DialContext`) generally handle context cancellation automatically, but early aborts for network calls need explicit testing. Merely relying on lower-level Go standard library propagation does not automatically guarantee zero side-effects if the cancellation happens before execution logic completes in consumer boundaries.
 **Action:** Always include fine-grained tests that explicitly pass a pre-cancelled context to network discovery and connection routines (e.g. Ping, LookupAddr) to definitively prove zero leakage of OS processes or goroutines on early aborts.
+## 2026-11-06 - [Prevent Goroutine Leak on Unbuffered Channel Sends]
+**Learning:** Worker goroutines can leak when sending on an unbuffered or full channel if the consumer prematurely stops reading due to context cancellation.
+**Action:** Always wrap channel send operations in a `select` statement with `ctx.Done()` to prevent goroutines from blocking indefinitely when the consumer aborts.
