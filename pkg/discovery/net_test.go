@@ -70,6 +70,7 @@ func TestReverseDNSCancellation(t *testing.T) {
 
 	res := ReverseDNS(ctx, "8.8.8.8")
 	if res != "" {
+		_ = res
 		t.Errorf("ReverseDNS() with cancelled context should return empty string, got: %q", res)
 	}
 }
@@ -80,6 +81,7 @@ func TestGetMACCancellation(t *testing.T) {
 
 	res := GetMAC(ctx, "127.0.0.1")
 	if res != "" {
+		_ = res
 		t.Errorf("GetMAC() with cancelled context should return empty string, got: %q", res)
 	}
 }
@@ -124,5 +126,61 @@ func TestPingCancellationActive(t *testing.T) {
 	after := runtime.NumGoroutine()
 	if after > before+1 {
 		t.Errorf("Goroutine leak detected in active Ping cancellation: before=%d, after=%d", before, after)
+	}
+}
+
+func TestReverseDNSCancellationActive(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	before := runtime.NumGoroutine()
+
+	go func() {
+		time.Sleep(5 * time.Millisecond)
+		cancel()
+	}()
+
+	res := ReverseDNS(ctx, "8.8.8.8")
+	if res != "" {
+		_ = res
+		// Depending on network speed, it might resolve or not before cancellation,
+		// but we primarily want to ensure no leakage. Let's just log it if it resolved.
+		// t.Logf("ReverseDNS returned %q before cancellation", res)
+	}
+
+	for i := 0; i < 10; i++ {
+		if runtime.NumGoroutine() <= before+1 {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	after := runtime.NumGoroutine()
+	if after > before+1 {
+		t.Errorf("Goroutine leak detected in active ReverseDNS cancellation: before=%d, after=%d", before, after)
+	}
+}
+
+func TestGetMACCancellationActive(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	before := runtime.NumGoroutine()
+
+	go func() {
+		time.Sleep(5 * time.Millisecond)
+		cancel()
+	}()
+
+	res := GetMAC(ctx, "192.0.2.1")
+	if res != "" {
+		_ = res
+		// Just in case it returned something fast
+	}
+
+	for i := 0; i < 10; i++ {
+		if runtime.NumGoroutine() <= before+1 {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	after := runtime.NumGoroutine()
+	if after > before+1 {
+		t.Errorf("Goroutine leak detected in active GetMAC cancellation: before=%d, after=%d", before, after)
 	}
 }
