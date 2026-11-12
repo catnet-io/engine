@@ -35,8 +35,6 @@ Shared Go scanning engine for the CatNet ecosystem. Pure Go library — no binar
 | `pkg/export` | `ExportJSON`, `ExportCSV` | Export for `[]results.HostResult` with CSV sanitization. | Stable |
 | `pkg/exporter` | `ExportJSON`, `ExportCSV`, `ExportXML` | Export for `*results.ScanReport`. | Stable |
 | `pkg/coreerr` | `ErrTimeout`, `ErrCancelled`, `ErrInvalidInput` | Typed error taxonomy for `errors.Is`. | Stable |
-| `pkg/store` | `ScanStore`, `NewSQLiteStore` | SQLite scan history. | Deprecated — moving to consumers |
-| `pkg/diff` | `Compare`, `HostDiff` | Scan comparison. | Deprecated — moving to consumers |
 
 ## Quickstart
 
